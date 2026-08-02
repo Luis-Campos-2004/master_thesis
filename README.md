@@ -1,13 +1,22 @@
-# Tactile-Thermal Sensing from a Striped Elastomer Surface
+# Physical Decoupled Multimodal Vision-Bassed Programmable Skin
 
-A single stripe-patterned elastomer skin, photographed with an ordinary
-phone camera, is enough to recover **what touched it, how hard, how deep,
-and how hot** — no embedded electronics, no specialised imaging hardware.
-This repository is the full image-processing pipeline behind that idea: it
-turns a before/after photo pair of the membrane into contact shape, force,
-indentation depth, and surface temperature, and includes the raw calibration
-photo sets and CSVs the pipeline was built and validated against, so every
-result in the accompanying thesis is reproducible end to end.
+![Sensor stack: grating, PDMS, LED strip, and camera in one compact housing](images_report/figures/sensor_setup_annot.png)
+
+A programmable elastomer skin — one printed stripe pattern, imaged with an
+ordinary phone or USB camera — is enough to recover **what touched it, how
+hard, how deep, and how hot**, with no embedded electronics and no
+specialised imaging hardware. What makes this possible is that the two
+signals encoded in the pattern are **physically decoupled**: mechanical
+contact distorts the stripe *geometry* while barely touching stripe
+*colour*, and a temperature change shifts stripe *colour* while barely
+touching stripe *geometry*. Because the two effects are almost orthogonal,
+a single photo pair carries independent **multimodal**, vision-only tactile
+and thermal readouts. This repository is the full image-processing pipeline
+behind that idea: it turns a before/after photo pair of the membrane into
+contact shape, force, indentation depth, and surface temperature, and
+includes the raw calibration photo sets and CSVs the pipeline was built and
+validated against, so every result in the accompanying thesis is
+reproducible end to end.
 
 The core trick is that one printed pattern carries two independent signals.
 A press distorts the stripe *geometry* (their spacing and shape) without
@@ -45,6 +54,8 @@ independent physical effects perturb that pattern in distinguishable ways:
 Each pipeline exploits one of these effects and (approximately) ignores the
 other, so they can run on the same image pair and be combined without one
 contaminating the other's result.
+
+![Colour-based temperature-change segmentation: reference, deformed, and detected regions](images_report/figures/temp_segmentation.png)
 
 ## Repository layout
 
