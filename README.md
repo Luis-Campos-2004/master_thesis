@@ -125,7 +125,7 @@ controlled loading experiment.
 
 Run standalone, e.g.:
 ```bash
-python tactile/uniform_reconstruct.py --reference ref.jpg --deformed def.jpg -o output/recon
+python tactile/uniform_reconstruct.py 
 ```
 
 ## Pipeline 2 — Temperature: colour-based prediction (`temperature/`)
@@ -180,7 +180,7 @@ Runs both stages on one reference + one deformed image:
    unchanged.
 
 ```bash
-python integrated_pipeline.py --reference ref.jpg --deformed def.jpg -o output/run1
+python integrated_pipeline.py 
 ```
 
 Useful flags: `--area` (contact area in mm², for the force area-correction),
