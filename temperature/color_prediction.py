@@ -2,24 +2,18 @@ import cv2
 import numpy as np
 import pandas as pd
 
-# ====================================================================
 # ColorPredictor
-# ====================================================================
 
 class ColorPredictor:
     """
     Predicts temperature from a (purple) stripe pixel using inverse-distance
     weighted k-nearest-neighbours over RGB, HSV, and/or LAB colour spaces.
 
-    The CSV must contain a temperature column plus at least one set of colour
-    columns: R/G/B, H/S/V, and/or L/A/B (case-insensitive).
-    When color_space='auto' the space whose nearest neighbour is closest is
-    used for the final prediction; otherwise the named space
-    ('rgb' | 'hsv' | 'lab') is used.
-
-    Each space's features are min-max normalised per channel (using the
-    calibration ranges) before distances are computed, so that the 'auto'
-    comparison is scale-fair across RGB (0-255), HSV (H 0-180) and LAB.
+    The CSV needs a temperature column plus at least one colour space
+    (R/G/B, H/S/V, and/or L/A/B). With color_space='auto', whichever space
+    gives the closest nearest-neighbour match is used; otherwise the named
+    space ('rgb' | 'hsv' | 'lab') is used. Features are min-max normalised
+    per channel first so spaces can be compared fairly.
     """
 
     _SPACE_COLS = {"rgb": ["R", "G", "B"], "hsv": ["H", "S", "V"], "lab": ["L", "A", "B"]}
@@ -89,11 +83,8 @@ class ColorPredictor:
         return T_pred, top_temps, top_dists
 
     def sample_neighborhood(self, img_rgb, mask, cx, cy, radius):
-        """
-        Return mean (R, G, B) in a circular patch around (cx, cy) inside mask.
-        Sampling is done in RGB so the average pixel can be evaluated in every
-        colour space inside predict() (needed for 'auto').
-        """
+        """Return mean (R, G, B) in a circular patch around (cx, cy) inside mask.
+        Sampled in RGB so predict() can evaluate it in any colour space (for 'auto')."""
         h, w = mask.shape
         y0, y1 = max(0, cy - radius), min(h, cy + radius + 1)
         x0, x1 = max(0, cx - radius), min(w, cx + radius + 1)
@@ -102,22 +93,17 @@ class ColorPredictor:
         yy, xx   = np.ogrid[:patch_rgb.shape[0], :patch_rgb.shape[1]]
         circ     = (xx - (cx - x0))**2 + (yy - (cy - y0))**2 <= radius**2
         combined = (patch_mask > 0) & circ
-        pixels   = patch_rgb[combined]       # (N, 3) RGB
+        pixels   = patch_rgb[combined]
         if len(pixels) == 0:
             return None, 0
-        return pixels.mean(axis=0), len(pixels)   # mean RGB
+        return pixels.mean(axis=0), len(pixels)
 
     def predict(self, avg_rgb):
         """
         Predict temperature from an average RGB value (0-255 scale).
 
-        Returns
-        -------
-        temp       : float  — predicted temperature
-        top_temps  : array  — k nearest calibration temperatures
-        top_dists  : array  — their Euclidean distances
-        cs_used    : str    — colour space chosen ('rgb' | 'hsv' | 'lab')
-        confidence : float  — 0-100 %
+        Returns: temp, top_temps (k nearest calibration temps), top_dists
+        (their distances), cs_used (colour space chosen), confidence (0-100%).
         """
         if self.ref_temps is None:
             raise RuntimeError("Call load_reference() before predict().")

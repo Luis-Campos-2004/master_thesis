@@ -8,13 +8,11 @@ import matplotlib.patches as mpatches
 from scipy.signal import find_peaks, savgol_filter
 from scipy.ndimage import median_filter, gaussian_filter
 
-from color_prediction import ColorPredictor
-from black_prediction import BlackPredictor
+from temperature.color_prediction import ColorPredictor
+from temperature.black_prediction import BlackPredictor
 
 
-# ====================================================================
-# Config — color_segment.py settings
-# ====================================================================
+# Config — flatfield segmentation settings
 
 REF_IMAGE_PATH  = "C:/Users/liamg/OneDrive/Pictures/Camera Roll/WIN_20260520_20_50_17_Pro.jpg"
 IMG_IMAGE_PATH  = "C:/Users/liamg/OneDrive/Pictures/Camera Roll/WIN_20260522_04_31_51_Pro.jpg"
@@ -25,9 +23,7 @@ SIGMA         = 30     # Gaussian blur sigma to suppress grating stripes
 THRESHOLD     = 0.7    # z-score threshold for bright/dark segmentation
 MORPH_SIZE    = 40     # morphological kernel size (pixels)
 
-# ====================================================================
-# Config — color_segmentation_model.py settings
-# ====================================================================
+# Config — stripe detection settings
 COLOR_CSV_PATH  = "C:/Users/liamg/OneDrive/Documents/EPFL Master/Thesis/Code/csv_files/average_temps.csv"
 BLACK_CSV_PATH  = "C:/Users/liamg/OneDrive/Documents/EPFL Master/Thesis/Code/csv_files/average_temps_black.csv"
 
@@ -46,9 +42,7 @@ COLOR_SPACE   = "auto"   # 'auto' picks the best of RGB/HSV/LAB per click
 BLACK_COLOR_SPACE = "auto"
 
 
-# ====================================================================
 # Shared helpers
-# ====================================================================
 
 def rotate_image(img, angle):
     """Rotate image around its centre; angle in degrees."""
@@ -60,9 +54,7 @@ def rotate_image(img, angle):
                           borderMode=cv2.BORDER_REFLECT)
 
 
-# ====================================================================
-# Part 1 — Flatfield segmentation (from color_segment.py)
-# ====================================================================
+# Part 1 — Flatfield segmentation
 
 def crop_roi(bgr, crop_ratio=CROP_RATIO):
     """Crop a square centred on the image and return float32 grayscale."""
@@ -154,9 +146,7 @@ def save_segmentation_output(bright_clean, ref_crop_rgb, img_crop_rgb):
     print("Segmentation image saved → output/color_segmentation_result.png")
 
 
-# ====================================================================
-# Part 2 — Stripe detection (from color_segmentation_model.py)
-# ====================================================================
+# Part 2 — Stripe detection
 
 def load_image(path):
     """Load image and return BGR, RGB, HSV versions plus the V-channel float array."""
@@ -267,9 +257,7 @@ def build_masks(label_map, wafer_mask, morph_open_k, morph_close_k):
     return clean(purple_raw), clean(black_raw)
 
 
-# ====================================================================
-# Interactive viewer (from color_segmentation_model.py)
-# ====================================================================
+# Interactive viewer
 
 def classify_pixel(x, y, purple_mask, black_mask, wafer_mask):
     H, W = purple_mask.shape
@@ -390,13 +378,11 @@ def launch_interactive(img_rgb, img_bgr, purple_mask, black_mask, wafer_mask,
     plt.show()   # blocks until the window is closed
 
 
-# ====================================================================
 # Main — runs both parts in sequence
-# ====================================================================
 
 if __name__ == "__main__":
 
-    # ── Part 1: Load images for stripe detection & interactive viewer ─────────
+    # ── Part 1: Load image for stripe detection & interactive viewer ──────────
     img_bgr, img_rgb, img_hsv, val, H, W = load_image(IMG_IMAGE_PATH)
 
     cx, cy, radius = get_center_radius(H, W)
@@ -441,7 +427,7 @@ if __name__ == "__main__":
               "Black temperature prediction will be disabled.")
         black_predictor = None
 
-    # ── Part 2: Launch interactive viewer (blocks until window is closed) ─────
+    # ── Part 2: Launch interactive viewer (blocks until closed) ───────────────
     print("Launching interactive viewer — close the window to continue.")
     launch_interactive(img_rgb, img_bgr, purple_mask, black_mask, wafer_mask,
                        predictor=predictor, black_predictor=black_predictor)

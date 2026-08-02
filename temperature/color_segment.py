@@ -23,11 +23,8 @@ def rotate_image(img, angle):
                           borderMode=cv2.BORDER_REFLECT)
 
 def crop_roi(bgr, crop_ratio=CROP_RATIO):
-    """
-    Crop a square centred on the image, convert to float32 grayscale,
-    and optionally rotate to align the grating.
-    Returns: (gray_float32, half-side radius r, cropped side length)
-    """
+    """Crop a square centred on the image, convert to float32 grayscale,
+    and optionally rotate to align the grating."""
     h, w = bgr.shape[:2]
     cx, cy = w // 2, h // 2
     r = int(min(h, w) * crop_ratio)
@@ -44,7 +41,6 @@ ref_g, r, side = crop_roi(ref_bgr)
 img_g, _,    _  = crop_roi(img_bgr)
 
 # ── Circular mask inside the cropped ROI ────────────────────────────────────
-# The crop is a square of side `2r × 2r`; the disk fills it almost exactly.
 h, w   = ref_g.shape
 cx, cy = w // 2, h // 2
 r_outer = int(min(h, w) * 0.48)   # slightly inside the square edge
@@ -65,8 +61,7 @@ fig_lp, axes_lp = plt.subplots(1, 2, figsize=(12, 6))
 fig_lp.patch.set_facecolor('#1a1a2e')
 
 def _show_lp(ax, data, title):
-    # Clamp the display range to the signal inside the ROI so a few
-    # divide-by-near-zero outliers don't hijack the colorbar.
+    # Clip the display range so a few near-zero outliers don't skew the colorbar
     vmin, vmax = np.percentile(data[circle_mask], [1, 99])
     im = ax.imshow(data, cmap='viridis', vmin=vmin, vmax=vmax)
     ax.set_title(title, color='white', fontsize=12, fontweight='bold')

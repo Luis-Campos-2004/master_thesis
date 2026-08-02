@@ -1,46 +1,27 @@
 """
 estimate_force_depth.py
 =======================
-Given a reference image, a deformed image, and the binary ROI mask (white
-circle on black), reports:
+Given a reference image, a deformed image, and a binary ROI mask (white
+circle on black), estimates:
 
   * the mean stripe-width ratio inside the ROI
-  * the estimated contact force  [N]
-  * the estimated mean indentation depth  [mm]
+  * the contact force  [N]
+  * the mean indentation depth  [mm]
 
-No reconstruction, no 3-D surface — just the two numbers.
-
-Measurement method: "frequency"
-  The 2-D FFT carrier peak of each image gives the global mean stripe period
-  inside the ROI (sub-pixel parabolic refinement). The ratio is
-
-      ratio = period_deformed / period_reference
-
-  which equals the mean width-deformation ratio used to build the calibration
-  CSV. Computation is fast (~1 s per pair).
-
-Calibration chain:
-  ratio  -> force  via the linear fit to force_vs_mean_width_ratio.csv
-  force  -> depth  via PCHIP monotone interpolation through
-                   force_vs_mean_depth.csv (0 N → 0 mm anchor),
-                   linearly extrapolated beyond the table with the
-                   end slope.
-
-Usage:
-  python estimate_force_depth.py reference.jpg deformed.jpg
-  python estimate_force_depth.py ref.jpg def.jpg --mask my_mask.png
-  python estimate_force_depth.py ref.jpg def.jpg --ratio-csv my_ratio.csv
+How it works: each image's 2-D FFT gives its stripe period inside the ROI
+(with sub-pixel refinement). ratio = period_deformed / period_reference.
+That ratio is converted to force via a linear fit to
+force_vs_mean_width_ratio.csv, and force is converted to depth via PCHIP
+interpolation through force_vs_mean_depth.csv (extrapolated linearly past
+the table's range).
 """
 
-# ═══════════════════════════════════════════════════════════
-#  CONFIG  —  edit these paths, then run (or use CLI flags)
-# ═══════════════════════════════════════════════════════════
-
+# ═══ CONFIG — edit these paths, then run ═══
 REF_IMAGE = "C:/Users/liamg/OneDrive/Documents/EPFL Master/Thesis/Force Pictures/reference/WIN_20260526_16_22_36_Pro.jpg"
 DEF_IMAGE = "C:/Users/liamg/OneDrive/Documents/EPFL Master/Thesis/Force Pictures/30N/WIN_20260525_20_02_15_Pro.jpg"
 MASK_IMAGE   = "C:/Users/liamg/OneDrive/Documents/EPFL Master/Thesis/Code/roi_mask_width_stripe.png"
-RATIO_CSV    = "force_vs_mean_width_ratio.csv"
-DEPTH_CSV    = "force_vs_mean_depth.csv"
+RATIO_CSV    = "csv_files/force_vs_mean_width_ratio.csv"
+DEPTH_CSV    = "csv_files/force_vs_mean_depth.csv"
 SHOW_PREVIEW = True   # pop up a quick visual of the FFT + ROI overlay
 
 # ═══════════════════════════════════════════════════════════
@@ -54,17 +35,11 @@ import numpy as np
 from scipy.interpolate import PchipInterpolator
 
 
-# -------------------------------------------------------
-# 1.  ROI  — same logic as plot_width_change.py
-# -------------------------------------------------------
+# --- 1. ROI — same logic as plot_width_change.py ---------------------
 
 def load_roi_from_mask(mask_path):
-    """
-    Load the binary mask (white circle on black background) and return the
-    inscribed circle parameters used for FFT measurement.
-
-    Returns (cx, cy, radius, binary_mask_array).
-    """
+    """Load the binary mask (white circle on black) and return its circle
+    parameters for FFT measurement: (cx, cy, radius, binary_mask_array)."""
     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
     if mask is None:
         raise FileNotFoundError(
@@ -81,9 +56,7 @@ def load_roi_from_mask(mask_path):
     return int(cx_f), int(cy_f), int(radius_f), binary
 
 
-# -------------------------------------------------------
-# 2.  Frequency-based stripe period  (true perpendicular px)
-# -------------------------------------------------------
+# --- 2. Frequency-based stripe period (true perpendicular px) ----------
 
 def _parabolic(lm, iy, ix):
     """Sub-pixel peak refinement (parabolic fit to log magnitude)."""
@@ -97,16 +70,13 @@ def _parabolic(lm, iy, ix):
 
 
 def stripe_period_fft(img_bgr, cx, cy, cr):
-    """
-    Compute the mean stripe period (px) inside the ROI circle via 2-D FFT
-    with sub-pixel carrier refinement. Returns (period_px, carrier_fy, carrier_fx).
-
-    The largest square inscribed in the ROI circle is used so all pixels are
-    fully inside the mask, matching the calibration script's ROI.
-    """
+    """Mean stripe period (px) inside the ROI circle, via 2-D FFT with
+    sub-pixel refinement. Returns (period_px, carrier_fy, carrier_fx).
+    Uses the largest square that fits inside the ROI circle, so every
+    pixel used is fully inside the mask."""
     gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)
 
-    # Largest inscribed square inside the ROI circle
+    # largest square that fits inside the ROI circle
     half = int(cr / np.sqrt(2)) - 2
     if half < 32:
         raise ValueError(f"ROI radius {cr} px is too small for FFT analysis.")
@@ -142,9 +112,7 @@ def stripe_period_fft(img_bgr, cx, cy, cr):
     return period, fy, fx, F, n, c
 
 
-# -------------------------------------------------------
-# 3.  Calibration chain: ratio -> force -> depth
-# -------------------------------------------------------
+# --- 3. Calibration chain: ratio -> force -> depth ----------------------
 
 class Calibration:
     def __init__(self, ratio_csv, depth_csv):
@@ -194,9 +162,7 @@ class Calibration:
         return ratio > self.R_at_max
 
 
-# -------------------------------------------------------
-# 4.  Preview figure
-# -------------------------------------------------------
+# --- 4. Preview figure ---------------------------------------------------
 
 def show_preview(img_ref, img_def, cx, cy, cr,
                  F_ref, F_def, period_ref, period_def,
@@ -247,18 +213,14 @@ def show_preview(img_ref, img_def, cx, cy, cr,
     plt.close(fig)
 
 
-# -------------------------------------------------------
-# 5.  Main
-# -------------------------------------------------------
+# --- 5. Main --------------------------------------------------------------
 
 def estimate(ref_path, def_path, mask_path, ratio_csv, depth_csv,
              preview=SHOW_PREVIEW):
 
-    # Load mask
     cx, cy, cr, _ = load_roi_from_mask(mask_path)
     print(f"  ROI : centre ({cx}, {cy}), radius {cr} px")
 
-    # Load images
     img_ref = cv2.imread(ref_path)
     img_def = cv2.imread(def_path)
     if img_ref is None:
@@ -266,18 +228,15 @@ def estimate(ref_path, def_path, mask_path, ratio_csv, depth_csv,
     if img_def is None:
         raise FileNotFoundError(f"Cannot read deformed:  {def_path}")
 
-    # Measure stripe period in each image
     period_ref, *_ = stripe_period_fft(img_ref, cx, cy, cr)
     period_def, *_ = stripe_period_fft(img_def, cx, cy, cr)
     ratio = period_def / period_ref
 
-    # Calibration
     cal   = Calibration(ratio_csv, depth_csv)
     force = cal.force_from_ratio(ratio)
     depth = cal.depth_from_force(force)
     beyond = cal.beyond_calibration(ratio)
 
-    # Report
     print()
     print("=" * 48)
     print(f"  Stripe period  (reference) : {period_ref:8.3f} px")

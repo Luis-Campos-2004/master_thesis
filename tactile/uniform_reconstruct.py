@@ -2,118 +2,69 @@
 reconstruct_3d_global.py
 ========================
 3-D reconstruction (matplotlib, mouse-rotatable) where each detected contact
-SHAPE gets ONE global FFT measurement taken from its MIDDLE, and therefore
-one force and one depth.  No windowed/tiled scanning.
+shape gets a single global FFT measurement from its middle, and so one force and
+one depth each.
 
-  * The contact shape(s) come from detect_shape.detect(): every connected
-    component is treated as a distinct contact, so a press with three
-    objects can read e.g. 2.0 mm, 2.5 mm and 3.0 mm.
-  * For each contact, the rim band is eroded away (the stripe ratio near the
-    edge is kinematic artefact, not pressure) and the stripe period is
-    measured by a single masked + windowed FFT over the remaining INTERIOR,
-    at full camera resolution, with sub-pixel (parabolic, zero-padded) peak
-    refinement.  Reference and deformed use the SAME interior mask and the
-    same carrier prior, so they cannot lock onto different peaks/harmonics.
-  * ratio = period_def / period_ref  ->  force  ->  depth through the
-    calibration of estimate_force_depth.Calibration (your CSVs).
-  * The 3-D surface is a flat plateau per contact at its calibrated depth,
-    feathered at the rim — by construction, since one global measurement
-    per shape carries no interior depth variation.
+What it does:
+  * Contact shapes come from detect_shape.detect() — each connected
+    component is a separate contact, so multiple objects each get their
+    own depth reading.
+  * For each contact, the rim is eroded away (it's a kinematic artefact,
+    not pressure) and the stripe period is measured from the remaining
+    interior via a single masked FFT at full camera resolution.
+  * ratio = period_def / period_ref -> force -> depth, using
+    estimate_force_depth.Calibration.
+  * The 3-D surface is a flat plateau per contact at its depth (feathered
+    at the rim), since one global measurement carries no interior detail.
 
-Requires in the same folder:  detect_shape.py, estimate_force_depth.py,
+Requires: detect_shape.py, estimate_force_depth.py,
 force_vs_mean_width_ratio.csv, force_vs_mean_depth.csv.
 
 Usage:
   python reconstruct_3d_global.py                       (uses CONFIG paths)
-  python reconstruct_3d_global.py --reference r.jpg --deformed d.jpg
-  python reconstruct_3d_global.py --no-show -o out
 """
 
-# ═══════════════════════════════════════════════════════════
-#  CONFIG  —  edit these paths, then run (or use CLI flags)
-# ═══════════════════════════════════════════════════════════
-
+# ═══ CONFIG — edit these paths, then run (or use CLI flags) ═══
 REF_IMAGE = "C:/Users/liamg/OneDrive/Pictures/Camera Roll/WIN_20260613_12_11_37_Pro.jpg"
 DEF_IMAGE = "C:/Users/liamg/OneDrive/Pictures/Camera Roll/WIN_20260613_12_11_55_Pro.jpg"
-RATIO_CSV = "tactile/force_vs_mean_width_ratio_frequency.csv"
-DEPTH_CSV = "tactile/force_vs_mean_depth.csv"
+RATIO_CSV = "csv_files/force_vs_mean_width_ratio_frequency.csv"
+DEPTH_CSV = "csv_files/force_vs_mean_depth.csv"
 OUTPUT_PATH = "output/recon_global"
 
 # --- contact-area correction -------------------------------------------
-# The ratio calibration CSV was acquired with a circular indenter of
-# ~314 mm^2 (r = 10 mm).  The membrane responds to PRESSURE (F / A), so a
-# shape with a different area produces a different stripe-ratio change for
-# the same force.  To first order  (ratio - 1) is proportional to F / A, so the
-# measured ratio is mapped onto the calibration circle's equivalent ratio:
-#
-#     ratio_equivalent = 1 + (ratio - 1) * (CONTACT_AREA_MM2 / CALIB_AREA_MM2)
-#
-# before the force lookup.  Set CONTACT_AREA_MM2 to the area of the shape
-# you pressed with (mm^2); leave CALIB_AREA_MM2 at the calibration value.
+# Membrane responds to pressure (F/A), so ratio is rescaled to what the
+# calibration circle (~314 mm^2) would show at the same force:
+# ratio_equivalent = 1 + (ratio - 1) * (CONTACT_AREA_MM2 / CALIB_AREA_MM2)
 CONTACT_AREA_MM2 = 400.0   # area of the shape used in THIS experiment (mm^2)
 CALIB_AREA_MM2 = 314.0     # area of the circle used for the calibration CSVs
 
 # --- per-shape area (handles two+ shapes with DIFFERENT areas) ----------
-# Each detected contact has its own pixel area (comp.sum() in the detection
-# frame). The membrane responds to pressure F/A, so the correction factor for
-# each shape is just the PIXEL-AREA RATIO against the calibration circle
-# (the mm-per-pixel scale is the same for both and cancels):
-#
-#     ratio_eq_i = 1 + (ratio_i - 1) * (area_i_px / CALIB_AREA_PX)
-#
-# Set CALIB_AREA_PX to the calibration circle's pixel area MEASURED IN THE SAME
-# FRAME the script counts contacts in. With FULL_RES_GEOMETRY = True that frame
-# is full camera resolution, so this is simply the white-pixel count of your
-# full-res calibration mask (e.g. 340037). With FULL_RES_GEOMETRY = False it is
-# the ~768-frame count instead - read it from the printed "area ... px".
-# Leave at 0 to keep the old single-area (CONTACT_AREA_MM2) behaviour.
+# Correct each contact by its own pixel area vs. the calibration circle's
+# pixel area (mm-per-pixel cancels out): ratio_eq_i = 1 + (ratio_i - 1) *
+# (area_i_px / CALIB_AREA_PX). Leave CALIB_AREA_PX at 0 to disable.
 CALIB_AREA_PX = 0          # circle's pixel area in the detection frame; 0 -> off
 
 # --- auto calibration area from the original ROI mask -------------------
-# Instead of hard-coding CALIB_AREA_PX, point this at the binary mask that was
-# used to build the ratio calibration CSV (white shape on black). Its white
-# pixel count IS the calibration shape's area. The mask is centre-cropped with
-# the SAME CROP_RATIO as the data and its white FRACTION is rescaled to the
-# data geometry frame, so it works regardless of the mask's own resolution.
-# Used only when CALIB_AREA_PX <= 0 and KNOWN_AREAS_MM2 is empty. Set to "" to
-# disable (then the old single-area CONTACT_AREA_MM2 behaviour applies).
-CALIB_MASK_PATH = "roi_mask_width_stripe.png"
+# Points at the binary mask used to build the ratio CSV; its white-pixel
+# count (cropped/rescaled to match the data) becomes the calibration area.
+# Used only when CALIB_AREA_PX <= 0 and KNOWN_AREAS_MM2 is empty.
+CALIB_MASK_PATH = "masks/roi_mask_width_stripe.png"
 
 # --- mask -> detected-footprint scale ----------------------------------
-# IMPORTANT: roi_mask_width_stripe.png is the TIGHT inscribed FFT measurement
-# window, whereas detect_shape segments the broader deformation footprint a
-# press produces (the "halo"). On this rig the circular calibration indenter
-# masks 340 037 px but detect_shape gives it a ~637 000 px footprint, i.e. the
-# footprint is ~1.87x the ROI mask. Since the area correction compares each
-# test shape's *detected footprint* against the calibration area, the mask area
-# must be brought onto the footprint scale before use:
-#       A_cal = (mask white px, in data frame) * CALIB_FOOTPRINT_SCALE
-# Set this to 1.0 to use the raw mask area (this OVER-corrects here, ~40 N mean
-# error). The default 1.874 matches the calibration circle's measured footprint
-# and unifies circle/square to ~6 N mean error. Re-measure it for a new rig by
-# running batch_validate.py and taking (mean calibration-shape footprint /
-# mask white px).
+# detect_shape's footprint is wider than the raw mask (340 037 -> ~637 000 px,
+# ~1.87x on this rig), so mask area is scaled: A_cal = mask_px * SCALE.
+# 1.0 over-corrects (~40 N mean error); 1.874 matches footprint (~6 N error).
 CALIB_FOOTPRINT_SCALE = 1.874
 
 # --- known areas override (optional) -----------------------------------
-# If you KNOW the true area of each pressed shape, list them here in mm^2 and
-# they are assigned to the detected contacts in descending-size order (largest
-# detected blob -> largest listed area). This bypasses the pixel scale
-# (CALIB_AREA_PX) entirely: area_factor = known_mm2 / CALIB_AREA_MM2.
-# Use only when the contact area really equals these nominal areas and the
-# shapes are clearly different in size (so size-order matching is unambiguous).
-# Example for the square+circle pair:  KNOWN_AREAS_MM2 = [225.0, 177.0]
+# List known true areas (mm^2); assigned to contacts largest-first, bypassing
+# CALIB_AREA_PX. Only safe when shape sizes are unambiguous.
 KNOWN_AREAS_MM2 = []       # empty -> measure each shape's area from its pixels
 
 # --- full-resolution geometry ------------------------------------------
-# detect_shape works on a downsized (~768 px) frame, so by default the mask,
-# areas and depth map live in that frame. With FULL_RES_GEOMETRY = True the
-# mask returned by detect_shape is upscaled to full camera resolution and ALL
-# geometry (connected components, areas, distance-transform erosion, depth) is
-# done full-res. The stripe FFT is already full-res either way. NOTE: this
-# does not make the segmentation itself sharper (that decision is still made
-# at 768 inside detect_shape) - it only puts areas/coords/depth in full-res
-# pixels, so CALIB_AREA_PX must then be the circle's FULL-RES pixel count.
+# With FULL_RES_GEOMETRY = True, the mask is upscaled and all geometry
+# (areas, erosion, depth) computed at full-res instead of the ~768 frame
+# detect_shape uses (segmentation itself is unaffected).
 FULL_RES_GEOMETRY = True
 
 ERODE_FRAC = 0.45      # interior = distance > min(30px, ERODE_FRAC * max dist)
@@ -131,13 +82,11 @@ import os
 import cv2
 import numpy as np
 
-import detect_shape as ds
-import estimate_force_depth as efd
+import tactile.detect_shape as ds
+import tactile.estimate_force_depth as efd
 
 
-# ----------------------------------------------------------------------
-# Full-resolution crop (same window detect_shape uses, without downsizing)
-# ----------------------------------------------------------------------
+# --- Full-resolution crop (same window detect_shape uses, no downsizing) ---
 def load_crop_fullres(path):
     bgr = cv2.imread(path)
     if bgr is None:
@@ -146,17 +95,14 @@ def load_crop_fullres(path):
     r = int(min(h, w) * ds.CROP_RATIO)
     crop = bgr[h // 2 - r:h // 2 + r, w // 2 - r:w // 2 + r]
     gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY).astype(np.float32)
-    return gray                                   # square, side = 2r
+    return gray                                   # square crop, side = 2r
 
 
-# ----------------------------------------------------------------------
-# Calibration area straight from the original ROI mask
-# ----------------------------------------------------------------------
+# --- Calibration area straight from the original ROI mask ------------------
 def calib_area_from_mask(mask_path, n_full):
-    """White-pixel area of the calibration mask, expressed in the n_full
-    geometry frame (px). The mask is centre-cropped with the same CROP_RATIO
-    used on the data, then its white FRACTION is rescaled to n_full**2 so the
-    result is independent of the mask file's own resolution."""
+    """White-pixel area of the calibration mask, in the n_full geometry
+    frame (px). Cropped the same way as the data, then its white fraction
+    is rescaled to n_full**2 — independent of the mask file's own resolution."""
     m = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
     if m is None:
         raise FileNotFoundError(f"calibration mask not found: {mask_path}")
@@ -167,13 +113,11 @@ def calib_area_from_mask(mask_path, n_full):
     return frac * float(n_full ** 2)
 
 
-# ----------------------------------------------------------------------
-# Carrier prior on the reference (true fundamental, harmonic-safe)
-# ----------------------------------------------------------------------
+# --- Carrier prior on the reference (true fundamental, harmonic-safe) ------
 def carrier_prior(gray_full):
     """Stripe fundamental of the whole reference crop, in cycles/px.
-    Small DC exclusion + walk-down to the fundamental when a comparable
-    peak exists at f/k (square-wave stripes have strong odd harmonics)."""
+    Walks down to a lower harmonic if a comparable peak exists at f/k,
+    since square-wave stripes have strong odd harmonics."""
     n = min(gray_full.shape)
     g = gray_full[:n, :n]
     win = np.outer(np.hanning(n), np.hanning(n))
@@ -213,16 +157,13 @@ def carrier_prior(gray_full):
     return fy / n, fx / n                          # cycles per pixel
 
 
-# ----------------------------------------------------------------------
-# Masked global FFT period of one shape interior
-# ----------------------------------------------------------------------
+# --- Masked global FFT period of one shape interior -------------------------
 def period_masked_fft(gray_full, weight, f_cpp, pad=FFT_PAD):
-    """Stripe period (px) of the region selected by `weight` (same shape as
-    gray_full window): the image is multiplied by the smooth interior weight
-    (Hann x eroded mask), embedded in a zero-padded array, and the carrier
-    peak is searched only near the prior f_cpp (cycles/px), then refined
-    parabolically.  Using one identical weight for reference and deformed
-    makes the ratio insensitive to the mask's own spectral footprint."""
+    """Stripe period (px) of the region picked out by `weight` (Hann window
+    x eroded mask). Zero-pads the windowed image, searches for the carrier
+    only near the prior f_cpp, then refines it parabolically. Using the same
+    weight for reference and deformed keeps the ratio unaffected by the
+    mask's own spectral shape."""
     h, w = weight.shape
     g = (gray_full - gray_full[weight > 0.01].mean()) * weight
     N = int(2 ** np.ceil(np.log2(max(h, w, pad // 2) * 2)))
@@ -254,9 +195,7 @@ def period_masked_fft(gray_full, weight, f_cpp, pad=FFT_PAD):
     return N / fr
 
 
-# ----------------------------------------------------------------------
-# Reconstruction
-# ----------------------------------------------------------------------
+# --- Reconstruction ----------------------------------------------------------
 def reconstruct_global(ref_path, def_path, cal, contact_area_mm2=None):
     if contact_area_mm2 is None:
         contact_area_mm2 = CONTACT_AREA_MM2
@@ -274,9 +213,8 @@ def reconstruct_global(ref_path, def_path, cal, contact_area_mm2=None):
     scale = N_full / n                              # 768 -> full-res factor
 
     # --- choose the geometry frame -------------------------------------
-    # m = side of the frame all geometry (mask/areas/depth) lives in.
-    # s2f maps geometry-frame coords -> full-res for the FFT windows.
-    # cscale converts the 768-tuned px constants into the geometry frame.
+    # m = geometry frame side; s2f maps it to full-res; cscale rescales
+    # the 768-tuned px constants into this frame.
     if FULL_RES_GEOMETRY:
         mask = cv2.resize(mask.astype(np.uint8), (N_full, N_full),
                           interpolation=cv2.INTER_NEAREST) > 0
@@ -374,11 +312,8 @@ def reconstruct_global(ref_path, def_path, cal, contact_area_mm2=None):
             continue
         ratio = p_def / p_ref
 
-        # --- per-shape area, in priority order:
-        #     1) user-supplied true area for this contact (known_map),
-        #     2) measured pixel area vs the calibration circle (CALIB_AREA_PX),
-        #     3) single global CONTACT_AREA_MM2.
-        #     Two shapes are always corrected independently. ---
+        # per-shape area, in priority order: known_map override, then pixel
+        # area vs. the calibration circle, then the global CONTACT_AREA_MM2
         if cidx in known_map:
             shape_area_mm2 = known_map[cidx]
             area_factor = shape_area_mm2 / CALIB_AREA_MM2
@@ -422,9 +357,7 @@ def reconstruct_global(ref_path, def_path, cal, contact_area_mm2=None):
             "interiors": interiors, "deformed": deformed_img}
 
 
-# ----------------------------------------------------------------------
-# Figures
-# ----------------------------------------------------------------------
+# --- Figures -----------------------------------------------------------------
 def show_overlay(recon, title="", show=True, save_png=None):
     """Shapes + the interior regions actually used for each global FFT."""
     import matplotlib
@@ -503,9 +436,7 @@ def show_3d(recon, z_exaggeration=None, title="", show=True, save_png=None):
     plt.close(fig)
 
 
-# ----------------------------------------------------------------------
-# Main
-# ----------------------------------------------------------------------
+# --- Main ---------------------------------------------------------------------
 def main():
     ap = argparse.ArgumentParser(
         description=__doc__,

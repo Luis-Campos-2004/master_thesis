@@ -1,25 +1,13 @@
 """
 Batch Temperature Validation — Predicted vs Actual
-==================================================
-Walks a folder whose sub-folders are named by temperature (25, 26, 27, …),
-predicts a temperature for each of the (10) images in every sub-folder using
-the *whole* ROI mask (same mask as roi_mask.png), then for each temperature:
 
-Set PREDICTOR = "color" (ColorPredictor) or "black" (BlackPredictor) in the
-CONFIG block to choose which model and reference CSV are used.
+Each sub-folder of DATA_ROOT is named after its actual temperature (25, 26, 27, ...).
+For every image in a folder, predicts a temperature, trims the highest/lowest
+outliers, and averages the rest. Then plots predicted vs actual temperature
+with error bars and a y = x reference line.
 
-
-    • discards the 2 highest and 2 lowest predictions,
-    • averages the remaining 6,
-    • reports the standard error of that trimmed sample.
-
-Finally it plots predicted (y) vs actual (x) temperature with standard-error
-bars and an ideal, perfectly-linear  y = x  reference line.
-
-The "actual" temperature for each folder is the numeric folder name itself
-(25, 26, 27, …).
-
-CSV expected columns (case-insensitive): Temperature, R, G, B, H, S, V, L, a, b
+Set PREDICTOR to "color" or "black" in the CONFIG block to pick the model.
+CSV columns expected (case-insensitive): Temperature, R, G, B, H, S, V, L, a, b
 """
 
 import os
@@ -31,18 +19,16 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Make both predictors importable whether run from the repo root or here
+# Make sure the predictor modules can be imported regardless of cwd
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 if _THIS_DIR not in sys.path:
     sys.path.insert(0, _THIS_DIR)
 from color_prediction import ColorPredictor
 from black_prediction import BlackPredictor
 
-# ══════════════════════════════════════════════════════════════════════════════
 # CONFIG — edit these paths
-# ══════════════════════════════════════════════════════════════════════════════
 
-# Which model to use:  "color"  → ColorPredictor   |   "black"  → BlackPredictor
+# Choose the model: "color" or "black"
 PREDICTOR   = "black"
 
 # Root folder containing the temperature sub-folders (25/, 26/, …)
@@ -51,7 +37,7 @@ DATA_ROOT   = "C:/Users/liamg/OneDrive/Documents/EPFL Master/Thesis/Black and Co
 # Repo root (where roi_mask.png and csv_files/ live)
 REPO_ROOT   = os.path.abspath(os.path.join(_THIS_DIR, ".."))
 
-MASK_PATH   = os.path.join(REPO_ROOT, "black_color_mask.jpg")
+MASK_PATH   = os.path.join(REPO_ROOT, "masks/black_color_mask.jpg")
 
 # Reference CSV used for each predictor
 CSV_COLOR   = os.path.join(REPO_ROOT, "csv_files", "average_temps.csv")
@@ -74,9 +60,7 @@ PREDICTOR_CLASS, CSV_PATH = _PREDICTORS[PREDICTOR.lower()]
 OUT_PLOT    = os.path.join(REPO_ROOT,
                            f"{PREDICTOR}_predicted_vs_actual_temperature_{PREDICTOR.lower()}.png")
 
-# ══════════════════════════════════════════════════════════════════════════════
 # HELPERS
-# ══════════════════════════════════════════════════════════════════════════════
 
 def load_mask(mask_path):
     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
@@ -95,21 +79,18 @@ def mean_rgb_in_mask(bgr, mask):
     if not np.any(sel):
         return None
     rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB).astype(float)
-    return rgb[sel].mean(axis=0)          # (R, G, B)
+    return rgb[sel].mean(axis=0)
 
 
-# Channel order used for the per-folder colour summary
+# Column order for the per-folder colour summary
 COLOR_CHANNELS = ("R", "G", "B", "H", "S", "V", "L", "a", "b")
 
 
 def rgb_to_all_channels(avg_rgb):
-    """Convert a mean (R, G, B) value to the 9-vector (R,G,B,H,S,V,L,a,b).
-
-    HSV and LAB use the same OpenCV (uint8) convention as the predictor:
-    H in 0-179, S/V in 0-255, L/a/b in 0-255 (a,b offset by 128).
-    """
+    """Convert a mean (R, G, B) to the 9-vector (R,G,B,H,S,V,L,a,b), using the
+    same OpenCV HSV/LAB conventions as the predictor."""
     rgb_feat, hsv_feat, lab_feat = ColorPredictor._pixel_to_all_spaces(*avg_rgb)
-    return np.concatenate([rgb_feat, hsv_feat, lab_feat])   # length 9
+    return np.concatenate([rgb_feat, hsv_feat, lab_feat])
 
 
 def trimmed_stats(values, n_discard):
@@ -124,9 +105,7 @@ def trimmed_stats(values, n_discard):
     return mean, std, kept
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # MAIN
-# ══════════════════════════════════════════════════════════════════════════════
 
 def main():
     print(f"Predictor: {PREDICTOR.lower()}  ({PREDICTOR_CLASS.__name__})")
@@ -184,7 +163,7 @@ def main():
             print(f"{name:>8}  (no valid predictions — skipped)")
             continue
 
-        actual = nominal          # actual temperature = numeric folder name
+        actual = nominal          # folder name is the actual temperature
         mean, std, kept = trimmed_stats(preds, N_DISCARD)
 
         actuals.append(actual)
@@ -213,9 +192,8 @@ def main():
     pred_means = np.asarray(pred_means)
     pred_stds  = np.asarray(pred_stds)
 
-    # ── R² of predicted vs actual (about the ideal y = x line) ────────────────
-    # For the color model, restrict the fit to actual temps in [24, 31] °C;
-    # for the black model, use the whole range.
+    # ── R² and RMSE of predicted vs actual, relative to the ideal y = x line ──
+    # Color model: only fit actual temps 24-31°C. Black model: use full range.
     if PREDICTOR.lower() == "color":
         r2_mask = (actuals >= 24.0) & (actuals <= 31.0)
         r2_range = "24–31 °C"
@@ -255,16 +233,13 @@ def main():
     ax.set_ylabel("Predicted temperature (°C)", fontsize=12)
     ax.set_title(f"Predicted vs Measured Temperature  (Black Model)",
                  fontsize=13)
-    # For the color model, fix both axes to 23–32 °C so the 31 °C point
-    # isn't cut off and the box stays square (not lopsided).
+    # Fix axes to 23-32°C for the color model so the 31°C point isn't cut off.
     if PREDICTOR.lower() == "color":
         ax.set_xlim(23.0, 32.0)
         ax.set_ylim(23.0, 32.0)
     else:
         ax.set_xlim(line)
         ax.set_ylim(line)
-    # Let the wide figure stretch the x-axis and condense the y-axis
-    # (no equal-aspect constraint, so the box fills the figure).
     ax.grid(True, linestyle=":", alpha=0.5)
     ax.legend(fontsize=10, loc="upper left")
     fig.tight_layout()
