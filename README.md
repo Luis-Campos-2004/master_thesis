@@ -1,6 +1,9 @@
 # Physical Decoupled Multimodal Vision-Bassed Programmable Skin
 
-![Sensor stack: grating, PDMS, LED strip, and camera in one compact housing](images_report/figures/sensor_setup_annot.png)
+<p align="center">
+  <img src="images_report/figures/sensor_setup_compact.png" alt="Assembled sensor housing" width="45%">
+  <img src="images_report/figures/sensor_setup_annot.png" alt="Exploded view: grating, PDMS, LED strip, and camera" width="45%">
+</p>
 
 A programmable elastomer skin — one printed stripe pattern, imaged with an
 ordinary phone or USB camera — is enough to recover **what touched it, how
