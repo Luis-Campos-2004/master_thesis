@@ -34,8 +34,8 @@ def crop_roi(bgr, crop_ratio=CROP_RATIO):
     return gray, r, gray.shape[0]
 
 # ── Load & crop to ROI ───────────────────────────────────────────────────────
-ref_bgr = cv2.imread('C:/Users/liamg/OneDrive/Pictures/Camera Roll/WIN_20260520_20_50_16_Pro.jpg')
-img_bgr = cv2.imread('C:/Users/liamg/OneDrive/Pictures/Camera Roll/WIN_20260522_04_31_56_Pro.jpg')
+ref_bgr = cv2.imread('')
+img_bgr = cv2.imread('')
 
 ref_g, r, side = crop_roi(ref_bgr)
 img_g, _,    _  = crop_roi(img_bgr)

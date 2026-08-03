@@ -32,16 +32,16 @@ from black_prediction import BlackPredictor
 PREDICTOR   = "black"
 
 # Root folder containing the temperature sub-folders (25/, 26/, …)
-DATA_ROOT   = "C:/Users/liamg/OneDrive/Documents/EPFL Master/Thesis/Black and Color Experiment/Heating Run"
+DATA_ROOT   = "data/raw/black_and_color_experiment/Heating Run"
 
-# Repo root (where roi_mask.png and csv_files/ live)
-REPO_ROOT   = os.path.abspath(os.path.join(_THIS_DIR, ".."))
+# Repo root (where data/masks and data/processed/csv_files live)
+REPO_ROOT   = os.path.abspath(os.path.join(_THIS_DIR, "..", ".."))
 
-MASK_PATH   = os.path.join(REPO_ROOT, "masks/black_color_mask.jpg")
+MASK_PATH   = os.path.join(REPO_ROOT, "data", "masks", "black_color_mask.jpg")
 
 # Reference CSV used for each predictor
-CSV_COLOR   = os.path.join(REPO_ROOT, "csv_files", "average_temps.csv")
-CSV_BLACK   = os.path.join(REPO_ROOT, "csv_files", "average_temps_black.csv")
+CSV_COLOR   = os.path.join(REPO_ROOT, "data", "processed", "csv_files", "average_temps.csv")
+CSV_BLACK   = os.path.join(REPO_ROOT, "data", "processed", "csv_files", "average_temps_black.csv")
 
 TARGET_COL  = "Temperature"
 COLOR_SPACE = "auto"          # "rgb" | "hsv" | "lab" | "auto"

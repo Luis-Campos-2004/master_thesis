@@ -17,11 +17,11 @@ the table's range).
 """
 
 # ═══ CONFIG — edit these paths, then run ═══
-REF_IMAGE = "C:/Users/liamg/OneDrive/Documents/EPFL Master/Thesis/Force Pictures/reference/WIN_20260526_16_22_36_Pro.jpg"
-DEF_IMAGE = "C:/Users/liamg/OneDrive/Documents/EPFL Master/Thesis/Force Pictures/30N/WIN_20260525_20_02_15_Pro.jpg"
-MASK_IMAGE   = "C:/Users/liamg/OneDrive/Documents/EPFL Master/Thesis/Code/roi_mask_width_stripe.png"
-RATIO_CSV    = "csv_files/force_vs_mean_width_ratio.csv"
-DEPTH_CSV    = "csv_files/force_vs_mean_depth.csv"
+REF_IMAGE = "data/raw/force_pictures/reference/WIN_20260526_16_22_36_Pro.jpg"
+DEF_IMAGE = "data/raw/force_pictures/30N/WIN_20260525_20_02_15_Pro.jpg"
+MASK_IMAGE   = "data/masks/roi_mask_width_stripe.png"
+RATIO_CSV    = "data/processed/csv_files/force_vs_mean_width_ratio.csv"
+DEPTH_CSV    = "data/processed/csv_files/force_vs_mean_depth.csv"
 SHOW_PREVIEW = True   # pop up a quick visual of the FFT + ROI overlay
 
 # ═══════════════════════════════════════════════════════════

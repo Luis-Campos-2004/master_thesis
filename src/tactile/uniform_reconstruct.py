@@ -25,10 +25,10 @@ Usage:
 """
 
 # ═══ CONFIG — edit these paths, then run (or use CLI flags) ═══
-REF_IMAGE = "C:/Users/liamg/OneDrive/Pictures/Camera Roll/WIN_20260613_12_11_37_Pro.jpg"
-DEF_IMAGE = "C:/Users/liamg/OneDrive/Pictures/Camera Roll/WIN_20260613_12_11_55_Pro.jpg"
-RATIO_CSV = "csv_files/force_vs_mean_width_ratio_frequency.csv"
-DEPTH_CSV = "csv_files/force_vs_mean_depth.csv"
+REF_IMAGE = ""
+DEF_IMAGE = ""
+RATIO_CSV = "data/processed/csv_files/force_vs_mean_width_ratio_frequency.csv"
+DEPTH_CSV = "data/processed/csv_files/force_vs_mean_depth.csv"
 OUTPUT_PATH = "output/recon_global"
 
 # --- contact-area correction -------------------------------------------
@@ -48,7 +48,7 @@ CALIB_AREA_PX = 0          # circle's pixel area in the detection frame; 0 -> of
 # Points at the binary mask used to build the ratio CSV; its white-pixel
 # count (cropped/rescaled to match the data) becomes the calibration area.
 # Used only when CALIB_AREA_PX <= 0 and KNOWN_AREAS_MM2 is empty.
-CALIB_MASK_PATH = "masks/roi_mask_width_stripe.png"
+CALIB_MASK_PATH = "data/masks/roi_mask_width_stripe.png"
 
 # --- mask -> detected-footprint scale ----------------------------------
 # detect_shape's footprint is wider than the raw mask (340 037 -> ~637 000 px,

@@ -14,8 +14,8 @@ from temperature.black_prediction import BlackPredictor
 
 # Config — flatfield segmentation settings
 
-REF_IMAGE_PATH  = "C:/Users/liamg/OneDrive/Pictures/Camera Roll/WIN_20260520_20_50_17_Pro.jpg"
-IMG_IMAGE_PATH  = "C:/Users/liamg/OneDrive/Pictures/Camera Roll/WIN_20260522_04_31_51_Pro.jpg"
+REF_IMAGE_PATH  = ""
+IMG_IMAGE_PATH  = ""
 
 CROP_RATIO    = 0.31   # fraction of min(h,w) used as crop radius
 GRATING_ANGLE = 0      # degrees — set to your actual grating angle if needed
@@ -24,8 +24,8 @@ THRESHOLD     = 0.7    # z-score threshold for bright/dark segmentation
 MORPH_SIZE    = 40     # morphological kernel size (pixels)
 
 # Config — stripe detection settings
-COLOR_CSV_PATH  = "C:/Users/liamg/OneDrive/Documents/EPFL Master/Thesis/Code/csv_files/average_temps.csv"
-BLACK_CSV_PATH  = "C:/Users/liamg/OneDrive/Documents/EPFL Master/Thesis/Code/csv_files/average_temps_black.csv"
+COLOR_CSV_PATH  = "data/processed/csv_files/average_temps.csv"
+BLACK_CSV_PATH  = "data/processed/csv_files/average_temps_black.csv"
 
 SMOOTH_WIN    = 21
 SMOOTH_POLY   = 3

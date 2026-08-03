@@ -29,8 +29,8 @@ import matplotlib.pyplot as plt
 # ═══════════════════════════════════════════════════════════
 #  CONFIG
 
-REF_IMAGE = "C:/Users/liamg/OneDrive/Documents/EPFL Master/Thesis/Final Code/Final Images/ref_image.jpg"
-DEF_IMAGE = "C:/Users/liamg/OneDrive/Documents/EPFL Master/Thesis/Final Code/Final Images/def_image.jpg"
+REF_IMAGE = "data/raw/final_images/ref_image.jpg"
+DEF_IMAGE = "data/raw/final_images/def_image.jpg"
 OUTPUT_PATH = "output/temp_shape_recon"
 
 # --- temperature-change gating -----------------------------------------
