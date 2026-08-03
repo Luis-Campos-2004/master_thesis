@@ -85,8 +85,8 @@ contaminating the other's result.
       <sub>Detected contact region outlined on the deformed frame</sub>
     </td>
     <td align="center">
-      <img src="results/images_report/figures_final/shape.png" alt="Reconstructed contact shape mask" height="220"><br>
-      <sub>Reconstructed contact shape mask (FTP)</sub>
+      <img src="results/images_report/figures_final/combo_tip.jpg" alt="Sensor tip components: contact nut and 3-D printed housing" height="220"><br>
+      <sub>Sensor tip components — contact nut and 3-D printed housing</sub>
     </td>
   </tr>
   <tr>
@@ -105,8 +105,8 @@ contaminating the other's result.
       <sub>Interactive stripe-color temperature prediction (k-NN)</sub>
     </td>
     <td align="center">
-      <img src="results/images_report/figures_final/combo_tip.jpg" alt="Sensor tip components: contact nut and 3-D printed housing" height="220"><br>
-      <sub>Sensor tip components — contact nut and 3-D printed housing</sub>
+      <img src="results/images_report/figures_final/shape.png" alt="Reconstructed contact shape mask" height="220"><br>
+      <sub>Reconstructed contact shape mask (FTP)</sub>
     </td>
   </tr>
 </table>
