@@ -68,22 +68,48 @@ Each pipeline exploits one of these effects and (approximately) ignores the
 other, so they can run on the same image pair and be combined without one
 contaminating the other's result.
 
-<p align="center">
-  <img src="results/images_report/figures_final/ref_image.jpg" alt="Reference (undeformed, unheated) image" width="45%">
-  <img src="results/images_report/figures_final/def_image.jpg" alt="Deformed (pressed and heated) image" width="45%">
-</p>
-<p align="center">
-  <img src="results/images_report/figures_final/def_img_red_circ.png" alt="Deformed stripe pattern with the detected contact region circled" width="45%">
-  <img src="results/images_report/figures_final/shape.png" alt="Reconstructed contact shape mask" width="45%">
-</p>
-<p align="center">
-  <img src="results/images_report/figures_final/depth_3d.png" alt="3-D depth reconstruction of the contact" width="45%">
-  <img src="results/images_report/figures_final/temp_seg.png" alt="Color-based temperature-change segmentation: detected regions outlined" width="45%">
-</p>
-<p align="center">
-  <img src="results/images_report/figures_final/temp_pred.png" alt="Interactive stripe-color temperature prediction" width="45%">
-  <img src="results/images_report/figures_final/combo_tip.jpg" alt="Sensor tip components: contact nut and 3-D printed housing" width="45%">
-</p>
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="results/images_report/figures_final/ref_image.jpg" alt="Reference (undeformed, unheated) image" height="220"><br>
+      <sub>Reference frame — undeformed, unheated stripe pattern</sub>
+    </td>
+    <td align="center">
+      <img src="results/images_report/figures_final/def_image.jpg" alt="Deformed (pressed and heated) image" height="220"><br>
+      <sub>Deformed frame — same region, pressed and/or heated</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="results/images_report/figures_final/def_img_red_circ.png" alt="Deformed stripe pattern with the detected contact region circled" height="220"><br>
+      <sub>Detected contact region outlined on the deformed frame</sub>
+    </td>
+    <td align="center">
+      <img src="results/images_report/figures_final/shape.png" alt="Reconstructed contact shape mask" height="220"><br>
+      <sub>Reconstructed contact shape mask (FTP)</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="results/images_report/figures_final/depth_3d.png" alt="3-D depth reconstruction of the contact" height="220"><br>
+      <sub>3-D depth reconstruction from the force–depth relationship</sub>
+    </td>
+    <td align="center">
+      <img src="results/images_report/figures_final/temp_seg.png" alt="Color-based temperature-change segmentation: detected regions outlined" height="220"><br>
+      <sub>Color-based temperature-change segmentation</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="results/images_report/figures_final/temp_pred.png" alt="Interactive stripe-color temperature prediction" height="220"><br>
+      <sub>Interactive stripe-color temperature prediction (k-NN)</sub>
+    </td>
+    <td align="center">
+      <img src="results/images_report/figures_final/combo_tip.jpg" alt="Sensor tip components: contact nut and 3-D printed housing" height="220"><br>
+      <sub>Sensor tip components — contact nut and 3-D printed housing</sub>
+    </td>
+  </tr>
+</table>
 
 ## Repository layout
 
