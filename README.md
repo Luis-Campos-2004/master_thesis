@@ -1,4 +1,4 @@
-# Physical Decoupled Multimodal Vision-Bassed Programmable Skin
+# Physical Decoupled Multimodal Vision-Based Programmable Skin
 
 <p align="center">
   <img src="results/images_report/figures/sensor_setup_compact.png" alt="Assembled sensor housing" height="260">
@@ -13,19 +13,17 @@ with embedded electronics (piezoresistive or capacitive elements), which
 adds manufacturing complexity and a single point of failure if one component
 fails. Vision-based tactile sensors sidestep this: a soft contact surface is
 imaged by a camera and deformation is recovered through image processing
-instead of wiring. Sensors like GelSight and TacTip established this
-approach for contact force and shape; others such as HaptiTemp and later
-multimodal designs began adding temperature via thermochromic pigments.
+instead of wiring.
 
-This project builds on that lineage with a **physically decoupled,
-multimodal** vision-based skin: a single printed stripe pattern, imaged with
-an ordinary phone or USB camera, is enough to recover **what touched it, how
-hard, how deep, and how hot** — with no embedded electronics and no
-specialised imaging hardware. Two independent physical effects are layered
-into the same pattern and read out separately:
+This project is a **physically decoupled, multimodal** vision-based skin: a
+single printed stripe pattern, imaged with an ordinary phone or USB camera,
+is enough to recover **what touched it, how hard, how deep, and how hot** —
+with no embedded electronics and no specialized imaging hardware. Two
+independent physical effects are layered into the same pattern and read out
+separately:
 
 - **Temperature** — thermochromic liquid-crystal pigments mixed into the
-  stripe grating shift *colour* with temperature, at either a sensitive
+  stripe grating shift *color* with temperature, at either a sensitive
   range close to body temperature (25–31°C) or a wider range (10–70°C),
   depending on the pigment mix used.
 - **Touch** — the stripe *geometry* (spacing and phase) distorts under
@@ -34,7 +32,7 @@ into the same pattern and read out separately:
   built from the resulting force–depth relationship.
 
 What makes both readable from the same photo is that they're **physically
-decoupled**: a press barely shifts stripe *colour* (chroma shift ~2.5 LAB
+decoupled**: a press barely shifts stripe *color* (chroma shift ~2.5 LAB
 units) and a temperature change barely shifts stripe *spacing*, so each
 effect can be measured almost independently and then reconciled — this
 project's central contribution — so a temperature-only event isn't mistaken
@@ -47,19 +45,19 @@ accompanying thesis ([`docs/Gibbons_Liam_Master_Thesis.pdf`](docs/Gibbons_Liam_M
 is reproducible end to end.
 
 Concretely, each image pair — one *reference* (undeformed /
-unheated) and one *deformed* (pressed and/or heated) — is analysed with two
+unheated) and one *deformed* (pressed and/or heated) — is analyzed with two
 independent, image-only pipelines:
 
 - **`src/tactile/`** — Fourier Transform Profilometry (FTP): a press distorts
   the printed stripe pattern, and that distortion is decoded into contact
   shape, force, and depth.
-- **`src/temperature/`** — colour/LAB analysis: a temperature change shifts
-  the stripe colour, which is decoded into a predicted temperature via k-NN
+- **`src/temperature/`** — color/LAB analysis: a temperature change shifts
+  the stripe color, which is decoded into a predicted temperature via k-NN
   regression against a calibration CSV, and detected as a segmented
-  colour-change region.
+  color-change region.
 
 `src/integrated_pipeline.py` runs both stages on one image pair and
-reconciles them, so temperature-only artefacts don't get reported as
+reconciles them, so temperature-only artifacts don't get reported as
 presses and vice versa.
 
 ## How it works
@@ -69,21 +67,21 @@ independent physical effects perturb that pattern in distinguishable ways:
 
 1. **Mechanical contact** locally compresses/stretches the stripes —
    measurable as a **phase shift** of the fringe pattern (FTP) — but leaves
-   stripe *colour* essentially unchanged (chroma shift ~2.5 LAB units).
-2. **Temperature change** shifts the stripe *colour* (LAB chroma shifts of
+   stripe *color* essentially unchanged (chroma shift ~2.5 LAB units).
+2. **Temperature change** shifts the stripe *color* (LAB chroma shifts of
    ~8–12 units) but leaves the stripe *spacing/period* unchanged.
 
 Each pipeline exploits one of these effects and (approximately) ignores the
 other, so they can run on the same image pair and be combined without one
 contaminating the other's result.
 
-![Colour-based temperature-change segmentation: reference, deformed, and detected regions](results/images_report/figures/temp_segmentation.png)
+![Color-based temperature-change segmentation: reference, deformed, and detected regions](results/images_report/figures/temp_segmentation.png)
 
 ## Repository layout
 
 ```
 src/
-  integrated_pipeline.py          combined pipeline: colour stage + tactile stage
+  integrated_pipeline.py          combined pipeline: color stage + tactile stage
   tactile/
     detect_shape.py                shape detection from stripe phase distortion (FTP)
     estimate_force_depth.py        global stripe-period ratio -> force -> depth (single ROI)
@@ -93,7 +91,7 @@ src/
     color_prediction.py            ColorPredictor: k-NN temperature regression (purple stripes)
     black_prediction.py            BlackPredictor: k-NN temperature regression (black stripes)
     color_segment.py               standalone flatfield/z-score segmentation script (debug/dev)
-    batch_temperature_validation.py batch predicted-vs-actual validation over labelled image folders
+    batch_temperature_validation.py batch predicted-vs-actual validation over labeled image folders
 data/
   raw/
     shape_pictures/                 reference + deformed image sets for the tactile pipeline, by shape
@@ -103,7 +101,7 @@ data/
     final_images/                   one example reference/deformed pair used for the report figures below
   masks/                           ROI/segmentation mask images used by the tactile and temperature scripts
   processed/
-    csv_files/                     calibration CSVs (force<->ratio, force<->depth, colour<->temperature)
+    csv_files/                     calibration CSVs (force<->ratio, force<->depth, color<->temperature)
 results/
   images_report/                  output figures generated by the pipelines, used in the thesis write-up
 ```
@@ -130,7 +128,7 @@ striped membrane:
    measurement.
 3. **`uniform_reconstruct.py`** — the full per-contact version: for each
    shape detected by `detect_shape.py`, erodes away the rim (a kinematic
-   artefact, not a pressure signal), takes **one global masked FFT** of the
+   artifact, not a pressure signal), takes **one global masked FFT** of the
    interior at full camera resolution to get its stripe period, and applies
    the same ratio → force → depth calibration chain per contact. Supports an
    area correction (the membrane responds to *pressure*, i.e. force/area, so
@@ -153,26 +151,26 @@ Run standalone, e.g.:
 python src/tactile/uniform_reconstruct.py 
 ```
 
-## Pipeline 2 — Temperature: colour-based prediction (`src/temperature/`)
+## Pipeline 2 — Temperature: color-based prediction (`src/temperature/`)
 
 1. **`color_merged.py`** — the main entry point. Detects stripes via
    row-adaptive peak finding on the value channel, separates "purple" and
    "black" stripe pixels into masks, and launches an **interactive
    matplotlib pop-up**: click any stripe pixel to see its predicted
    temperature (see `ColorPredictor` / `BlackPredictor` below). It also
-   contains a gated colour-change segmentation (used by the integrated
+   contains a gated color-change segmentation (used by the integrated
    pipeline) that flags a "temperature change" region only when the local
    LAB chroma shift and area exceed configurable thresholds — set high
    enough that a mechanical press (which barely shifts chroma) doesn't
    falsely trigger it.
 2. **`color_prediction.py`** (`ColorPredictor`) / **`black_prediction.py`**
    (`BlackPredictor`) — inverse-distance-weighted k-NN regression from pixel
-   colour to temperature, calibrated from a CSV of (temperature, colour)
-   samples. Each supports RGB, HSV, and/or LAB colour spaces (features are
-   min-max normalised per channel); with `color_space="auto"`, whichever
+   color to temperature, calibrated from a CSV of (temperature, color)
+   samples. Each supports RGB, HSV, and/or LAB color spaces (features are
+   min-max normalized per channel); with `color_space="auto"`, whichever
    space gives the closest nearest-neighbour match is used per query pixel.
    Two separate predictors/CSVs exist because the purple and black stripes
-   have different colour-temperature responses.
+   have different color-temperature responses.
 3. **`color_segment.py`** — a standalone, non-interactive dev/debug script
    for the flatfield + z-score segmentation step in isolation (produces
    diagnostic plots only; not needed for the main pipeline).
@@ -195,14 +193,14 @@ reference shots.
 
 Runs both stages on one reference + one deformed image:
 
-1. **Colour stage** — pops up the interactive temperature viewer on the
+1. **Color stage** — pops up the interactive temperature viewer on the
    deformed image, then checks reference vs. deformed for a genuine
    temperature change (gated on LAB chroma shift and area, since a press
    alone shouldn't trigger it) and saves a 3-panel segmentation figure only
    if one is found.
 2. **Tactile stage** — reconstructs shape/force/depth per contact. Contacts
    with force at or below `MIN_FORCE_N` (default 0.5 N) are discarded as
-   temperature-only artefacts, since a temperature change alone leaves the
+   temperature-only artifacts, since a temperature change alone leaves the
    stripe period — and hence the computed ratio/force — essentially
    unchanged.
 
@@ -212,7 +210,7 @@ python src/integrated_pipeline.py
 
 Useful flags: `--area` (contact area in mm², for the force area-correction),
 `--seg-chroma` / `--seg-min-area` / `--seg-min-blob` (temperature-change
-segmentation gates), `--min-force` (tactile force-artefact gate),
+segmentation gates), `--min-force` (tactile force-artifact gate),
 `--z-exaggeration` (3-D plot z-scaling), `--no-show` (save files only, skip
 all pop-up windows).
 
@@ -220,7 +218,7 @@ all pop-up windows).
 
 The repository includes the raw photo sets the pipelines above were built and
 validated against. None of these are synthetic — they're phone photos of the
-physical striped membrane, organised by experiment.
+physical striped membrane, organized by experiment.
 
 ### `data/raw/shape_pictures/` — tactile shape reconstruction
 
@@ -272,11 +270,11 @@ python src/tactile/estimate_force_depth.py \
 
 ### `data/raw/full_color_experiment/` and `data/raw/black_and_color_experiment/` — temperature calibration
 
-Same layout, one per stripe colour (purple stripes vs. black stripes, used
+Same layout, one per stripe color (purple stripes vs. black stripes, used
 by `ColorPredictor` and `BlackPredictor` respectively):
 
 - **`Calibration images/`** (purple set only) — reference shots used to
-  build the colour→temperature calibration CSV (`average_temps.csv`).
+  build the color→temperature calibration CSV (`average_temps.csv`).
 - **`Room Temperature/`, `Room Temperature 2/`** — baseline unheated shots;
   some include a `real_temp_room.txt` ground-truth reading.
 - **`Heating Run/`, `Heating Run 2/`, `Heating Run 3/`** and
@@ -309,7 +307,7 @@ python src/temperature/color_merged.py
 ### `data/processed/csv_files/` — calibration tables
 
 The tables consumed by both pipelines at run time, plus the raw load-cell
-logs and derived colour-calibration variants they were built from:
+logs and derived color-calibration variants they were built from:
 
 - `force_vs_mean_depth.csv` — force → indentation depth (used by
   `estimate_force_depth.py` / `uniform_reconstruct.py`).
@@ -320,12 +318,12 @@ logs and derived colour-calibration variants they were built from:
   explicitly, or rename the file, until the default is updated to match.)
 - `liamtestforce-Run-*.csv` — raw load-cell run logs used to derive the
   force/ratio and force/depth calibration curves above.
-- `average_temps.csv` / `average_temps_black.csv` — the colour→temperature
+- `average_temps.csv` / `average_temps_black.csv` — the color→temperature
   calibration tables used by `ColorPredictor` / `BlackPredictor`
   respectively (each with a `Temperature` column plus R/G/B, H/S/V, and
   L/a/b columns).
 - `average_temps_color_*` / `average_temps_black_*` / `average_temps_l_*` —
-  per-run and per-colour-space variants (heating/cooling, "l" = LAB-only)
+  per-run and per-color-space variants (heating/cooling, "l" = LAB-only)
   used during calibration development and validation; not required by the
   main scripts but kept for reproducing the calibration analysis.
 
@@ -334,7 +332,7 @@ logs and derived colour-calibration variants they were built from:
 - `roi_mask_width_stripe.png` — the calibration-circle ROI mask used by
   `uniform_reconstruct.py` (`CALIB_MASK_PATH`) for the tactile area
   correction.
-- `black_color_mask.jpg` — the stripe-colour mask used by
+- `black_color_mask.jpg` — the stripe-color mask used by
   `batch_temperature_validation.py` (`MASK_PATH`) to isolate stripe pixels
   before prediction.
 - `color_mask.png` — companion purple-stripe mask generated by the same
@@ -347,7 +345,7 @@ logs and derived colour-calibration variants they were built from:
   figures below; a convenient pair to try the pipeline on without digging
   through the experiment folders.
 - `results/images_report/` — figures produced by the pipelines
-  (shape/force/depth reconstructions, 3-D plots, colour-prediction and
+  (shape/force/depth reconstructions, 3-D plots, color-prediction and
   segmentation plots) and used directly in the thesis write-up: `figures/`
   (per-pipeline result figures), `figures_final/` (the final selected
   figures, generated from the `data/raw/final_images/` pair), and
