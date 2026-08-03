@@ -19,8 +19,8 @@ from skimage.filters import apply_hysteresis_threshold
 from skimage.restoration import unwrap_phase
 
 # --- Config -------------------------------------------------------------
-REF_IMAGE = "data/raw/shape_pictures/Ring/WIN_20260610_16_26_11_Pro.jpg"
-DEF_IMAGE = "data/raw/shape_pictures/Ring/WIN_20260610_16_26_31_Pro.jpg"
+REF_IMAGE = "data/raw/shape_pictures/Ring/img_01.jpg"
+DEF_IMAGE = "data/raw/shape_pictures/Ring/img_02.jpg"
 OUTPUT_PATH = "output/recon"
 STEM = "star"
 

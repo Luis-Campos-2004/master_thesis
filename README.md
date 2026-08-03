@@ -250,15 +250,17 @@ all pop-up windows).
 
 ## Image folders
 
-The repository includes the raw photo sets the pipelines above were built and
-validated against. None of these are synthetic — they're phone photos of the
-physical striped membrane, organized by experiment.
+The repository includes the raw photo sets that were used to calibrate the tactile and 
+temperature pipelines. Within each leaf folder, photos are named sequentially in
+chronological order as `img_01.jpg`, `img_02.jpg`, ... — the folder path itself
+(shape, force level, or temperature) already gives the photo its context, so the
+filename only needs to disambiguate multiple shots of the same condition.
+Ground-truth shape photos keep their descriptive names (e.g. `ring_gt.jpg`).
 
 ### `data/raw/shape_pictures/` — tactile shape reconstruction
 
 One subfolder per contact shape (`F shape`, `P shape`, `Ring`, `Square`,
-`Square Circle`, `Star`, `Three Circles`). Each contains 2-3
-`WIN_*_Pro.jpg` photos of the membrane under that contact, and most also
+`Square Circle`, `Star`, `Three Circles`). Each contains a few photos of the membrane under that contact, and most also
 include a `*_gt.jpg` ground-truth image (a photo/drawing of the pressed
 object itself, for visually checking the reconstructed shape against it).
 There's no separate "reference" (undeformed) image per shape folder — pick
@@ -269,16 +271,10 @@ reference.
 ```bash
 # detect_shape.py has no --reference/--deformed flags; edit REF_IMAGE /
 # DEF_IMAGE in its CONFIG block, e.g.
-#   REF_IMAGE = "data/raw/force_pictures/reference/WIN_20260526_16_22_36_Pro.jpg"
-#   DEF_IMAGE = "data/raw/shape_pictures/Star/WIN_20260605_13_41_05_Pro.jpg"
+#   REF_IMAGE = "data/raw/force_pictures/reference/img_01.jpg"
+#   DEF_IMAGE = "data/raw/shape_pictures/Star/img_01.jpg"
 # then run:
 python src/tactile/detect_shape.py
-
-# uniform_reconstruct.py and integrated_pipeline.py do take CLI overrides:
-python src/integrated_pipeline.py \
-  --reference "data/raw/force_pictures/reference/WIN_20260526_16_22_36_Pro.jpg" \
-  --deformed "data/raw/shape_pictures/Ring/WIN_20260610_16_26_11_Pro.jpg" \
-  -o output/ring
 ```
 
 ### `data/raw/force_pictures/` — tactile force/depth calibration
@@ -294,12 +290,7 @@ tactile pipeline on a pair and comparing the reported force to the folder's
 label.
 
 ```bash
-python src/tactile/estimate_force_depth.py \
-  --reference "data/raw/force_pictures/reference/WIN_20260526_16_22_36_Pro.jpg" \
-  --deformed "data/raw/force_pictures/24N/WIN_20260525_19_57_24_Pro.jpg" \
-  --ratio-csv data/processed/csv_files/force_vs_mean_width_ratio.csv \
-  --depth-csv data/processed/csv_files/force_vs_mean_depth.csv \
-  --mask calibration_mask.png
+python src/tactile/estimate_force_depth.py
 ```
 
 ### `data/raw/full_color_experiment/` and `data/raw/black_and_color_experiment/` — temperature calibration
@@ -309,17 +300,13 @@ by `ColorPredictor` and `BlackPredictor` respectively):
 
 - **`Calibration images/`** (purple set only) — reference shots used to
   build the color→temperature calibration CSV (`average_temps.csv`).
-- **`Room Temperature/`, `Room Temperature 2/`** — baseline unheated shots;
-  some include a `real_temp_room.txt` ground-truth reading.
-- **`Heating Run/`, `Heating Run 2/`, `Heating Run 3/`** and
+- **`Room Temperature/`, `Room Temperature 2/`** — baseline unheated shots.
+- **`Heating Run/`, `Heating Run 2/`** and
   **`Cooling Run/`, `Cooling Run 2/`** — one subfolder per target
-  temperature (e.g. `24/`, `25/`, ... up to `75/`), each with ~10 photos
-  and a `real_temp_<N>.txt` file giving the actual measured temperature for
-  that batch. This is exactly the layout `batch_temperature_validation.py`
-  expects for `DATA_ROOT`.
-- `data/raw/black_and_color_experiment/` additionally has `Old cooling/` and
-  `Old Heating/` (earlier, smaller calibration runs) — kept for reference,
-  not used by the current calibration CSVs.
+  temperature (e.g. `24/`, `25/`, ... up to `75/`), each with ~10 photos.
+  The subfolder name is the actual measured temperature for that batch —
+  this is exactly the layout `batch_temperature_validation.py` expects for
+  `DATA_ROOT`.
 
 ```bash
 # Predicted-vs-actual validation over a whole run (edit DATA_ROOT / PREDICTOR
@@ -331,7 +318,7 @@ python src/temperature/batch_temperature_validation.py
 
 # Single-image interactive viewer: edit REF_IMAGE_PATH / IMG_IMAGE_PATH in the
 # CONFIG block at the top of color_merged.py, e.g.
-#   IMG_IMAGE_PATH = "data/raw/full_color_experiment/Heating Run/40/WIN_20260429_20_36_08_Pro.jpg"
+#   IMG_IMAGE_PATH = "data/raw/full_color_experiment/Heating Run/40/img_01.jpg"
 # then run:
 python src/temperature/color_merged.py
 ```
@@ -357,7 +344,7 @@ logs and derived color-calibration variants they were built from:
   respectively (each with a `Temperature` column plus R/G/B, H/S/V, and
   L/a/b columns).
 - `average_temps_color_*` / `average_temps_black_*` / `average_temps_l_*` —
-  per-run and per-color-space variants (heating/cooling, "l" = LAB-only)
+  per-run and per-color-space variants (heating/cooling, "l" = L value in LAB)
   used during calibration development and validation; not required by the
   main scripts but kept for reproducing the calibration analysis.
 
@@ -367,16 +354,16 @@ logs and derived color-calibration variants they were built from:
   `uniform_reconstruct.py` (`CALIB_MASK_PATH`) for the tactile area
   correction.
 - `black_color_mask.jpg` — the stripe-color mask used by
-  `batch_temperature_validation.py` (`MASK_PATH`) to isolate stripe pixels
-  before prediction.
-- `color_mask.png` — companion purple-stripe mask generated by the same
-  segmentation step.
+  `batch_temperature_validation.py` (`MASK_PATH`) to isolate the pixels
+  in the raw data from the Black and Color experiments. Used in order to 
+  avoid any flawed pixels
+- `color_mask.png` — companion mask for the Full Color experiments.
 
 ### `data/raw/final_images/` and `results/images_report/` — example run and report figures
 
 - `data/raw/final_images/` — one example `reference`/`deformed` image pair
   (`ref_image.jpg`, `def_image.jpg`) used to generate the walkthrough
-  figures below; a convenient pair to try the pipeline on without digging
+  figures aboce; a convenient pair to try the pipeline on without digging
   through the experiment folders.
 - `results/images_report/` — figures produced by the pipelines
   (shape/force/depth reconstructions, 3-D plots, color-prediction and
@@ -405,8 +392,8 @@ included results.
 A few `REF_IMAGE` / `DEF_IMAGE` (or `REF_IMAGE_PATH` / `IMG_IMAGE_PATH`)
 defaults in `tactile/uniform_reconstruct.py`, `temperature/color_merged.py`,
 and `temperature/color_segment.py` are left **blank** — they originally
-pointed at development photos outside this repository (e.g. a phone's
-camera roll) that aren't bundled here. Point these at any reference/deformed
+pointed at development photos outside this repository that aren't bundled here. 
+Point these at any reference/deformed
 pair under [`data/raw/`](#image-folders) before running those scripts
 standalone, or use the corresponding CLI flags (`--reference`, `--deformed`)
 where available.
