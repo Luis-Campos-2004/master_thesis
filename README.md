@@ -8,16 +8,12 @@
 Touch is one of the senses that lets humans understand and manipulate their
 environment, and giving robots something comparable — shape, pressure,
 force, and temperature sensing in one package — would meaningfully improve
-their dexterity and safety around people. Most tactile sensors get there
-with embedded electronics (piezoresistive or capacitive elements), which
-adds manufacturing complexity and a single point of failure if one component
-fails. Vision-based tactile sensors sidestep this: a soft contact surface is
-imaged by a camera and deformation is recovered through image processing
-instead of wiring.
+their dexterity. Vision-based tactile sensors achieve this in a simple but elegant manner: a soft contact surface is
+imaged by a camera and deformation is recovered through image processing.
 
 This project is a **physically decoupled, multimodal** vision-based skin: a
-single printed stripe pattern, imaged with an ordinary phone or USB camera,
-is enough to recover **what touched it, how hard, how deep, and how hot** —
+single printed stripe pattern, imaged with a USB camera,
+is enough to recover **temperature, force, depth, and shape** —
 with no embedded electronics and no specialized imaging hardware. Two
 independent physical effects are layered into the same pattern and read out
 separately:
@@ -32,17 +28,14 @@ separately:
   built from the resulting force–depth relationship.
 
 What makes both readable from the same photo is that they're **physically
-decoupled**: a press barely shifts stripe *color* (chroma shift ~2.5 LAB
-units) and a temperature change barely shifts stripe *spacing*, so each
+decoupled**: a press doesn't impact *color*  and a temperature change doesn't shift stripe *spacing*, so each
 effect can be measured almost independently and then reconciled — this
 project's central contribution — so a temperature-only event isn't mistaken
 for a press, and vice versa. This repository is the full image-processing
 pipeline behind that idea: it turns a before/after photo pair of the
 membrane into contact shape, force, indentation depth, and surface
 temperature, and includes the raw calibration photo sets and CSVs the
-pipeline was built and validated against, so every result in the
-accompanying thesis ([`docs/Gibbons_Liam_Master_Thesis.pdf`](docs/Gibbons_Liam_Master_Thesis.pdf))
-is reproducible end to end.
+pipeline was built and validated against.
 
 Concretely, each image pair — one *reference* (undeformed /
 unheated) and one *deformed* (pressed and/or heated) — is analyzed with two
@@ -75,7 +68,22 @@ Each pipeline exploits one of these effects and (approximately) ignores the
 other, so they can run on the same image pair and be combined without one
 contaminating the other's result.
 
-![Color-based temperature-change segmentation: reference, deformed, and detected regions](results/images_report/figures/temp_segmentation.png)
+<p align="center">
+  <img src="results/images_report/figures_final/ref_image.jpg" alt="Reference (undeformed, unheated) image" width="45%">
+  <img src="results/images_report/figures_final/def_image.jpg" alt="Deformed (pressed and heated) image" width="45%">
+</p>
+<p align="center">
+  <img src="results/images_report/figures_final/def_img_red_circ.png" alt="Deformed stripe pattern with the detected contact region circled" width="45%">
+  <img src="results/images_report/figures_final/shape.png" alt="Reconstructed contact shape mask" width="45%">
+</p>
+<p align="center">
+  <img src="results/images_report/figures_final/depth_3d.png" alt="3-D depth reconstruction of the contact" width="45%">
+  <img src="results/images_report/figures_final/temp_seg.png" alt="Color-based temperature-change segmentation: detected regions outlined" width="45%">
+</p>
+<p align="center">
+  <img src="results/images_report/figures_final/temp_pred.png" alt="Interactive stripe-color temperature prediction" width="45%">
+  <img src="results/images_report/figures_final/combo_tip.jpg" alt="Sensor tip components: contact nut and 3-D printed housing" width="45%">
+</p>
 
 ## Repository layout
 
