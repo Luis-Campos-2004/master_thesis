@@ -5,29 +5,48 @@
   <img src="results/images_report/figures/sensor_setup_annot.png" alt="Exploded view: grating, PDMS, LED strip, and camera" height="260">
 </p>
 
-A programmable elastomer skin — one printed stripe pattern, imaged with an
-ordinary phone or USB camera — is enough to recover **what touched it, how
-hard, how deep, and how hot**, with no embedded electronics and no
-specialised imaging hardware. What makes this possible is that the two
-signals encoded in the pattern are **physically decoupled**: mechanical
-contact distorts the stripe *geometry* while barely touching stripe
-*colour*, and a temperature change shifts stripe *colour* while barely
-touching stripe *geometry*. Because the two effects are almost orthogonal,
-a single photo pair carries independent **multimodal**, vision-only tactile
-and thermal readouts. This repository is the full image-processing pipeline
-behind that idea: it turns a before/after photo pair of the membrane into
-contact shape, force, indentation depth, and surface temperature, and
-includes the raw calibration photo sets and CSVs the pipeline was built and
-validated against, so every result in the accompanying thesis is
-reproducible end to end.
+Touch is one of the senses that lets humans understand and manipulate their
+environment, and giving robots something comparable — shape, pressure,
+force, and temperature sensing in one package — would meaningfully improve
+their dexterity and safety around people. Most tactile sensors get there
+with embedded electronics (piezoresistive or capacitive elements), which
+adds manufacturing complexity and a single point of failure if one component
+fails. Vision-based tactile sensors sidestep this: a soft contact surface is
+imaged by a camera and deformation is recovered through image processing
+instead of wiring. Sensors like GelSight and TacTip established this
+approach for contact force and shape; others such as HaptiTemp and later
+multimodal designs began adding temperature via thermochromic pigments.
 
-The core trick is that one printed pattern carries two independent signals.
-A press distorts the stripe *geometry* (their spacing and shape) without
-noticeably changing their *colour*; a temperature change shifts the stripe
-*colour* without changing their spacing. Because the two effects are almost
-orthogonal, they can be decoded independently from the same photo and then
-recombined — cheaply, and with commodity cameras — into a single tactile +
-thermal readout. Concretely, each image pair — one *reference* (undeformed /
+This project builds on that lineage with a **physically decoupled,
+multimodal** vision-based skin: a single printed stripe pattern, imaged with
+an ordinary phone or USB camera, is enough to recover **what touched it, how
+hard, how deep, and how hot** — with no embedded electronics and no
+specialised imaging hardware. Two independent physical effects are layered
+into the same pattern and read out separately:
+
+- **Temperature** — thermochromic liquid-crystal pigments mixed into the
+  stripe grating shift *colour* with temperature, at either a sensitive
+  range close to body temperature (25–31°C) or a wider range (10–70°C),
+  depending on the pigment mix used.
+- **Touch** — the stripe *geometry* (spacing and phase) distorts under
+  mechanical contact, decoded via Fourier Transform Profilometry (FTP) into
+  contact shape, force, and indentation depth, with a 3-D reconstruction
+  built from the resulting force–depth relationship.
+
+What makes both readable from the same photo is that they're **physically
+decoupled**: a press barely shifts stripe *colour* (chroma shift ~2.5 LAB
+units) and a temperature change barely shifts stripe *spacing*, so each
+effect can be measured almost independently and then reconciled — this
+project's central contribution — so a temperature-only event isn't mistaken
+for a press, and vice versa. This repository is the full image-processing
+pipeline behind that idea: it turns a before/after photo pair of the
+membrane into contact shape, force, indentation depth, and surface
+temperature, and includes the raw calibration photo sets and CSVs the
+pipeline was built and validated against, so every result in the
+accompanying thesis ([`docs/Gibbons_Liam_Master_Thesis.pdf`](docs/Gibbons_Liam_Master_Thesis.pdf))
+is reproducible end to end.
+
+Concretely, each image pair — one *reference* (undeformed /
 unheated) and one *deformed* (pressed and/or heated) — is analysed with two
 independent, image-only pipelines:
 
