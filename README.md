@@ -379,7 +379,7 @@ logs and derived color-calibration variants they were built from:
 Python 3 with: `numpy`, `opencv-python`, `scipy`, `scikit-image`,
 `matplotlib`, `pandas`.
 
-## Notes on image paths and calibration files
+## Notes
 
 All default paths in the `CONFIG` block at the top of each script are
 **relative to the repository root**, so run every command from the top of
@@ -396,4 +396,6 @@ pointed at development photos outside this repository that aren't bundled here.
 Point these at any reference/deformed
 pair under [`data/raw/`](#image-folders) before running those scripts
 standalone, or use the corresponding CLI flags (`--reference`, `--deformed`)
-where available.
+where available.  
+
+
