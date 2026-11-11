@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+.venv/
+.DS_Store
+output/
+data/processed/shape_pictures_v2/
+data/processed/shape_pictures_v3/

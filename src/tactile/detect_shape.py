@@ -17,17 +17,21 @@ import numpy as np
 from scipy.ndimage import binary_fill_holes
 from skimage.filters import apply_hysteresis_threshold
 from skimage.restoration import unwrap_phase
+from skimage.segmentation import (inverse_gaussian_gradient,
+                                  morphological_geodesic_active_contour)
+
 
 # --- Config -------------------------------------------------------------
 REF_IMAGE = "data/raw/shape_pictures/Ring/img_01.jpg"
 DEF_IMAGE = "data/raw/shape_pictures/Ring/img_02.jpg"
 OUTPUT_PATH = "output/recon"
-STEM = "star"
+STEM = None
 
 
 # --- Parameters -----------------------------------------------------------
 CROP_RATIO = 0.31     # centred square crop, fraction of min(h, w)
 PROC_SIZE = 768       # working resolution (px); fringes stay well sampled
+BW_FRAC = 0.55       # band-pass width as fraction of |carrier|
 HP_SIGMA_FRAC = 0.117  # high-pass sigma as fraction of PROC_SIZE (~90 px @768)
 SMOOTH_SIGMA_FRAC = 0.008  # post-smoothing of the score (~6 px @768)
 ROI_RADIUS_FRAC = 0.45     # circular analysis mask radius (fraction of size)
@@ -49,6 +53,13 @@ MIN_COMP_FRAC = 0.04  # keep components >= this fraction of the largest one
 MIN_COMP_ABS = 4e-4   # and at least this fraction of the whole frame (absolute floor)
 HOLE_FILL_FRAC = 0.15  # fill holes smaller than this fraction of the mask
 FINAL_SMOOTH_FRAC = 0.008  # mask boundary smoothing sigma
+
+GAC_SIGMA_FRAC = 0.0026   # edge-map smoothing for the contour snap (~2 px @768)
+GAC_ITERS = 20            # geodesic active contour iterations
+DISP_BG_MARGIN_FRAC = 0.052  # phase background sampled this far outside the mask
+DISP_SMOOTH_FRAC = 0.0052    # smoothing of the displacement field (~4 px @768)
+CONTACT_PARAMS = dict(tight=True, smooth_frac=0.004, refine=True,
+                      disp_alpha=0.25)
 
 
 # --- ROI crop (user-supplied) --------------------------------------------
@@ -86,7 +97,8 @@ def find_carrier(gray):
     return F, (fy, fx)
 
 
-def demodulate(gray, carrier=None, bw_frac=0.55):
+
+def demodulate(gray, carrier=None, bw_frac=BW_FRAC):
     """Return the complex fringe field with the carrier ramp removed.
 
     carrier : (fy, fx) in FFT bins, or None to auto-detect.
@@ -146,9 +158,78 @@ def amplitude_drop(z_def, z_ref):
     return -cv2.GaussianBlur(a.astype(np.float32), (0, 0), 6)
 
 
+# --- Contact-mode refinements ----------------------------------------------
+def refine_contour(mask, score, roi, carrier, iters=GAC_ITERS):
+    """Snap the mask boundary onto the steepest part of the score.
+
+    A geodesic active contour pulls the boundary towards high score
+    gradient, but only inside a band one fringe period wide around the
+    current boundary, so it can re-place an edge without leaking into the
+    halo or swallowing a contact.
+    """
+    if not mask.any():
+        return mask
+    n = mask.shape[0]
+    s = score.astype(np.float64) / max(float(np.percentile(score[roi], 99.5)), 1e-9)
+    edges = inverse_gaussian_gradient(s, sigma=max(GAC_SIGMA_FRAC * n, 1.0))
+    snapped = morphological_geodesic_active_contour(
+        edges, num_iter=iters, init_level_set=mask, smoothing=1,
+        threshold="auto", balloon=0)
+    period = int(round(n / np.hypot(*carrier)))
+    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * period + 1,) * 2)
+    band = (cv2.dilate(mask, k) > 0) & (cv2.erode(mask, k) == 0)
+    out = mask.copy()
+    out[band] = snapped[band]
+    # the snap can leave pixel-sized specks or pinholes in the band; drop them
+    floor = MIN_COMP_ABS * out.size
+    for val in (1, 0):
+        n_c, c_lab, c_stats, _ = cv2.connectedComponentsWithStats(
+            (out == val).astype(np.uint8))
+        for j in range(1, n_c):
+                        if c_stats[j, cv2.CC_STAT_AREA] < floor:
+                            out[c_lab == j] = 1 - val
+    # the snap follows the fringes a little; smooth it like the final mask
+    sm = cv2.GaussianBlur(out.astype(np.float32), (0, 0),
+                          max(FINAL_SMOOTH_FRAC * n, 1.5))
+    return (sm > 0.5).astype(np.uint8)
+
+
+
+def compensate_displacement(mask, dphi, carrier, roi, alpha):
+    """Move a mask from the deformed image back onto the undeformed membrane.
+
+    The FTP phase change is the stripe pattern's displacement along the
+    carrier, u = -dphi * n / (2 pi |f|) px, so a pressed region is imaged
+    shifted along the carrier. Sampling the mask at y + alpha * u(y) * f_hat
+    takes back a fraction alpha of that shift.
+    """
+    if alpha == 0 or not mask.any():
+        return mask
+    n = mask.shape[0]
+    fy, fx = float(carrier[0]), float(carrier[1])
+    fr = np.hypot(fy, fx)
+    r = int(round(DISP_BG_MARGIN_FRAC * n))
+    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1,) * 2)
+    bg = roi & (cv2.dilate(mask, k) == 0)
+    if not bg.any():
+        bg = roi
+    ph = cv2.GaussianBlur((dphi - np.median(dphi[bg])).astype(np.float32),
+                          (0, 0), max(DISP_SMOOTH_FRAC * n, 1.0))
+    u = -ph * (n / (2 * np.pi * fr))
+    yy, xx = np.mgrid[:n, :n].astype(np.float32)
+    map_x = (xx + alpha * (fx / fr) * u).astype(np.float32)
+    map_y = (yy + alpha * (fy / fr) * u).astype(np.float32)
+    warped = cv2.remap(mask.astype(np.float32), map_x, map_y, cv2.INTER_LINEAR)
+    return ((warped > 0.5) & roi).astype(np.uint8)
+
+
 # --- Main detection ---------------------------------------------------------
+
 def detect(ref_path, def_path, size=PROC_SIZE, crop_ratio=CROP_RATIO,
-           use_orient=False, use_amp=False, tight=False):
+           use_orient=False, use_amp=False, tight=False, bw_frac=None,
+           smooth_frac=None, tight_lo_frac=None, refine=False,
+           disp_alpha=0.0):
+
     """tight=False (default): segment the full deformation footprint,
     including the membrane halo around the indenter. This is what the force
     pipeline's CALIB_FOOTPRINT_SCALE expects.
@@ -156,14 +237,30 @@ def detect(ref_path, def_path, size=PROC_SIZE, crop_ratio=CROP_RATIO,
     tight=True: segment just the indenter contact, cutting each contact back
     to its own peak-relative threshold. Better for shape recognition, but
     don't feed it into the area-corrected force chain without recalibrating
-    CALIB_FOOTPRINT_SCALE first.
+        CALIB_FOOTPRINT_SCALE first.
+
+    Contact mode (shape recognition): pass **CONTACT_PARAMS. On top of the
+    tight cut it keeps the score sharper (smooth_frac), snaps each boundary
+    onto the steepest part of the score (refine) and moves the mask back
+    onto the undeformed membrane (disp_alpha). bw_frac, smooth_frac and
+    tight_lo_frac default to BW_FRAC, SMOOTH_SIGMA_FRAC and TIGHT_LO_FRAC,
+    so calls that don't pass them behave exactly as before.
     """
+    if bw_frac is None:
+        bw_frac = BW_FRAC
+    if smooth_frac is None:
+        smooth_frac = SMOOTH_SIGMA_FRAC
+    if tight_lo_frac is None:
+        tight_lo_frac = TIGHT_LO_FRAC
+
     g_ref = load_roi(ref_path, size, crop_ratio)
+
     g_def = load_roi(def_path, size, crop_ratio)
 
     # use the same carrier (from the reference) for both images
-    z_ref, carrier = demodulate(g_ref)
-    z_def, _ = demodulate(g_def, carrier=carrier)
+    z_ref, carrier = demodulate(g_ref, bw_frac=bw_frac)
+    z_def, _ = demodulate(g_def, carrier=carrier, bw_frac=bw_frac)
+
 
     n = size
     yy, xx = np.mgrid[:n, :n]
@@ -172,8 +269,12 @@ def detect(ref_path, def_path, size=PROC_SIZE, crop_ratio=CROP_RATIO,
     # --- phase-difference channel -------------------------------------
     dphi = unwrap_phase(np.angle(z_def * np.conj(z_ref))).astype(np.float32)
     hp = dphi - cv2.GaussianBlur(dphi, (0, 0), HP_SIGMA_FRAC * n)
-    hp = cv2.GaussianBlur(hp, (0, 0), max(SMOOTH_SIGMA_FRAC * n, 1.5))
+    hp = cv2.GaussianBlur(hp, (0, 0), max(smooth_frac * n, 1.5))
     zp = robust_z(hp, roi)
+
+    # detect_shape.py already computes a full per-pixel phase map at line 173, then throws it away and keeps a binary mask. 
+    # So the depth output is a flat plateau, not a height field. I'd like to recover a real height map from that phase.
+    # It also gives proper contact area instead of a threshold, which everything spatially resolved depends on later.
 
     # Dragging shifts phase mostly one way (one dominant lobe); a straight
     # press splits it into two comparable lobes (gated by DIPOLE_LO..HI).
@@ -284,7 +385,8 @@ def detect(ref_path, def_path, size=PROC_SIZE, crop_ratio=CROP_RATIO,
         for i in range(1, n_cc2):
             comp = lab2 == i
             local_peak = float(np.percentile(score[comp], 99.5))
-            keep_c = comp & (score > TIGHT_LO_FRAC * local_peak)
+            keep_c = comp & (score > tight_lo_frac * local_peak)
+
             # close + fill within the component to patch gaps left by the
             # cut (genuine holes aren't in `comp`, so they can't return).
             keep_c = cv2.morphologyEx(keep_c.astype(np.uint8),
@@ -306,7 +408,13 @@ def detect(ref_path, def_path, size=PROC_SIZE, crop_ratio=CROP_RATIO,
                           max(FINAL_SMOOTH_FRAC * n, 1.5))
     mask = (sm > 0.5).astype(np.uint8)
 
+    # contact mode: snap the edges, then undo the stripe displacement
+    if refine:
+        mask = refine_contour(mask, score, roi, carrier)
+    mask = compensate_displacement(mask, dphi, carrier, roi, disp_alpha)
+
     # recount contacts on the final mask (bridging may have merged arcs)
+
     n_kept = max(cv2.connectedComponents(mask)[0] - 1, 0)
 
     return {
@@ -363,6 +471,11 @@ def render_outputs(res, out_dir, stem):
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--reference", default=REF_IMAGE)
+    ap.add_argument("--deformed", default=DEF_IMAGE)
+    ap.add_argument("--stem", default=STEM,
+                    help="output file prefix (default: <folder>_<file> of "
+                         "the deformed image)")
     ap.add_argument("--size", type=int, default=PROC_SIZE,
                     help="working resolution (default %(default)s)")
     ap.add_argument("--crop-ratio", type=float, default=CROP_RATIO)
@@ -373,13 +486,20 @@ def main():
     ap.add_argument("--tight", action="store_true",
                     help="peak-relative thresholds: segment the indenter "
                          "contact instead of the deformation footprint")
+    ap.add_argument("--contact", action="store_true",
+                    help="shape-recognition preset (CONTACT_PARAMS): tight "
+                         "cut + contour snap + displacement compensation")
     args = ap.parse_args()
 
-    res = detect(REF_IMAGE, DEF_IMAGE, size=args.size,
+
+    opts = dict(CONTACT_PARAMS) if args.contact else dict(tight=args.tight)
+    res = detect(args.reference, args.deformed, size=args.size,
                  crop_ratio=args.crop_ratio,
-                 use_orient=args.use_orient, use_amp=args.use_amp,
-                 tight=args.tight)
-    stem = STEM
+                 use_orient=args.use_orient, use_amp=args.use_amp, **opts)
+    stem = args.stem or "_".join([
+        os.path.basename(os.path.dirname(os.path.abspath(args.deformed))),
+        os.path.splitext(os.path.basename(args.deformed))[0]]).replace(" ", "_")
+
     render_outputs(res, OUTPUT_PATH, stem)
     area = res["mask"].sum() / res["roi"].sum() * 100
     print(f"carrier (fy,fx) = {res['carrier']}, sign = {res['sign']:+.0f}, "

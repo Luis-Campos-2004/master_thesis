@@ -1,0 +1,48 @@
+shape,angle_deg,expected,contacts_original,contacts_adjusted,change,area_original_mm2,area_adjusted_mm2
+F shape,0,1,1,1,same,481.7,463.6
+F shape,60,1,1,1,same,501.8,502.6
+F shape,120,1,1,1,same,824.5,694.6
+F shape,180,1,1,1,same,793.8,817.2
+F shape,240,1,3,3,same,475.2,467.5
+F shape,300,1,2,1,improved,237.2,206.9
+M shape,0,1,2,2,same,535.5,529.1
+M shape,60,1,2,2,same,515.5,532.6
+M shape,120,1,1,1,same,843.1,837.3
+M shape,180,1,1,1,same,734.4,753.4
+M shape,240,1,1,1,same,639.2,642.4
+M shape,300,1,1,1,same,687.8,693.5
+P shape,0,1,1,1,same,438.7,421.1
+P shape,60,1,1,1,same,691.1,761.7
+P shape,120,1,3,3,same,243.2,252.6
+P shape,180,1,1,1,same,685.8,676.5
+P shape,240,1,2,2,same,768.8,764.0
+P shape,300,1,1,1,same,278.1,269.7
+Ring,0,1,1,1,same,650.8,568.5
+Ring,60,1,1,1,same,681.6,683.7
+Ring,120,1,1,1,same,628.2,677.2
+Ring,180,1,1,1,same,724.3,752.2
+Ring,240,1,1,1,same,609.5,586.2
+Ring,300,1,1,1,same,445.2,419.6
+Square,0,1,1,2,worse,589.6,535.4
+Square,60,1,1,1,same,317.6,287.1
+Square,120,1,1,1,same,378.6,371.6
+Square,180,1,1,1,same,519.0,483.2
+Square,240,1,1,1,same,900.2,486.6
+Square,300,1,1,1,same,584.9,568.3
+Square Circle,0,2,2,2,same,718.7,741.0
+Square Circle,60,2,2,2,same,682.5,660.9
+Square Circle,120,2,2,2,same,648.8,653.7
+Square Circle,180,2,1,1,same,758.9,732.1
+Square Circle,240,2,2,2,same,724.0,703.2
+Square Circle,300,2,2,2,same,761.7,732.0
+Star,0,1,1,1,same,651.1,594.9
+Star,60,1,1,1,same,856.9,812.3
+Star,120,1,2,2,same,699.6,700.0
+Star,180,1,1,1,same,680.8,615.9
+Star,240,1,3,3,same,381.6,368.1
+Star,300,1,3,2,same,331.3,294.8
+Three Circles,0,3,3,3,same,238.8,240.0
+Three Circles,60,3,3,3,same,265.4,263.2
+Three Circles,120,3,3,3,same,256.6,250.3
+Three Circles,180,3,3,3,same,453.1,428.0
+Three Circles,240,3,3,3,same,528.7,540.9

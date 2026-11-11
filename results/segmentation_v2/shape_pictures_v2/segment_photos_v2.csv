@@ -1,0 +1,48 @@
+shape,angle_deg,contacts,expected,area_mm2
+F shape,0,1,1,463.6
+F shape,60,1,1,502.6
+F shape,120,1,1,694.6
+F shape,180,1,1,817.2
+F shape,240,3,1,467.5
+F shape,300,1,1,206.9
+M shape,0,2,1,529.1
+M shape,60,2,1,532.6
+M shape,120,1,1,837.3
+M shape,180,1,1,753.4
+M shape,240,1,1,642.4
+M shape,300,1,1,693.5
+P shape,0,1,1,421.1
+P shape,60,1,1,761.7
+P shape,120,3,1,252.6
+P shape,180,1,1,676.5
+P shape,240,2,1,764.0
+P shape,300,1,1,269.7
+Ring,0,1,1,568.5
+Ring,60,1,1,683.7
+Ring,120,1,1,677.2
+Ring,180,1,1,752.2
+Ring,240,1,1,586.2
+Ring,300,1,1,419.6
+Square,0,2,1,535.4
+Square,60,1,1,287.1
+Square,120,1,1,371.6
+Square,180,1,1,483.2
+Square,240,1,1,486.6
+Square,300,1,1,568.3
+Square Circle,0,2,2,741.0
+Square Circle,60,2,2,660.9
+Square Circle,120,2,2,653.7
+Square Circle,180,1,2,732.1
+Square Circle,240,2,2,703.2
+Square Circle,300,2,2,732.0
+Star,0,1,1,594.9
+Star,60,1,1,812.3
+Star,120,2,1,700.0
+Star,180,1,1,615.9
+Star,240,3,1,368.1
+Star,300,2,1,294.8
+Three Circles,0,3,3,240.0
+Three Circles,60,3,3,263.2
+Three Circles,120,3,3,250.3
+Three Circles,180,3,3,428.0
+Three Circles,240,3,3,540.9

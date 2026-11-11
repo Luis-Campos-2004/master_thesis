@@ -1,0 +1,39 @@
+row,star,angle_deg,repeat,depth_mm,file,ref_file,force_written,force_lo_N,force_hi_N,note
+2,S1,0,1,0.5,Star1/S1_0deg_r1_0.5mm.jpg,Star1/S1_0deg_r1_ref.jpg,"3,0",3.0,3.0,
+3,S1,0,1,1.0,Star1/S1_0deg_r1_1mm.jpg,Star1/S1_0deg_r1_ref.jpg,"10,5/11",10.5,11.0,
+4,S1,0,1,1.5,Star1/S1_0deg_r1_1.5mm.jpg,Star1/S1_0deg_r1_ref.jpg,"18,5/19",18.5,19.0,
+5,S1,0,1,2.0,Star1/S1_0deg_r1_2.0mm.jpg,Star1/S1_0deg_r1_ref.jpg,"28,5/29",28.5,29.0,
+6,S1,0,1,2.5,Star1/S1_0deg_r1_2.5mm.jpg,Star1/S1_0deg_r1_ref.jpg,"39,5/40",39.5,40.0,
+7,S1,0,1,3.0,Star1/S1_0deg_r1_3.0mm.jpg,Star1/S1_0deg_r1_ref.jpg,53.5/54,53.5,54.0,
+9,S2,0,1,0.5,Star2/S2_0deg_r1_0.5mm.jpg,Star2/S2_0deg_r1_ref.jpg,"2,0",2.0,2.0,
+10,S2,0,1,1.0,Star2/S2_0deg_r1_1.0mm.jpg,Star2/S2_0deg_r1_ref.jpg,"4,5/5",4.5,5.0,
+11,S2,0,1,1.5,Star2/S2_0deg_r1_1.5mm.jpg,Star2/S2_0deg_r1_ref.jpg,"8,5/9",8.5,9.0,
+12,S2,0,1,2.0,Star2/S2_0deg_r1_2.0mm.jpg,Star2/S2_0deg_r1_ref.jpg,13.5/14,13.5,14.0,
+13,S2,0,1,2.5,Star2/S2_0deg_r1_2.5mm.jpg,Star2/S2_0deg_r1_ref.jpg,19.5/20,19.5,20.0,
+14,S2,0,1,3.0,Star2/S2_0deg_r1_3.0mm.jpg,Star2/S2_0deg_r1_ref.jpg,28/28.5,28.0,28.5,
+14b,S2,0,1,3.5,Star2/S2_0deg_r1_3.5mm.jpg,Star2/S2_0deg_r1_ref.jpg,37/37.5,37.0,37.5,extra row
+16,S3,0,1,0.5,Star3/S3_0deg_r1_0.5mm.jpg,Star3/S3_0deg_r1_ref.jpg,"2,5/3",2.5,3.0,
+17,S3,0,1,1.0,Star3/S3_0deg_r1_1.0mm.jpg,Star3/S3_0deg_r1_ref.jpg,6.5/7,6.5,7.0,
+18,S3,0,1,1.5,Star3/S3_0deg_r1_1.5mm.jpg,Star3/S3_0deg_r1_ref.jpg,11.0/11.5,11.0,11.5,
+19,S3,0,1,2.0,Star3/S3_0deg_r1_2.0mm.jpg,Star3/S3_0deg_r1_ref.jpg,18/18.5,18.0,18.5,
+20,S3,0,1,2.5,Star3/S3_0deg_r1_2.5mm.jpg,Star3/S3_0deg_r1_ref.jpg,27/27.5,27.0,27.5,
+21,S3,0,1,3.0,Star3/S3_0deg_r1_3.0mm.jpg,Star3/S3_0deg_r1_ref.jpg,36.5/37,36.5,37.0,
+21b,S3,0,1,3.5,Star3/S3_0deg_r1_3.5mm.jpg,Star3/S3_0deg_r1_ref.jpg,47/47.5,47.0,47.5,extra row
+23,S4,0,1,0.5,Star4/S4_0deg_r1_0.5mm.jpg,Star4/S4_0deg_r1_ref.jpg,10.5/11,10.5,11.0,
+24,S4,0,1,1.0,Star4/S4_0deg_r1_1.0mm.jpg,Star4/S4_0deg_r1_ref.jpg,30/30.5,30.0,30.5,
+25,S4,0,1,1.5,Star4/S4_0deg_r1_1.5mm.jpg,Star4/S4_0deg_r1_ref.jpg,52/52.5,52.0,52.5,
+26,S4,0,1,2.0,Star4/S4_0deg_r1_2.0mm.jpg,Star4/S4_0deg_r1_ref.jpg,"77,7/78",77.7,78.0,
+30,S1,0,2,0.5,Star1/S1_0deg_r2_0.5mm.jpg,Star1/S1_0deg_r2_ref.jpg,"6,5/7",6.5,7.0,repeatability check
+31,S1,0,2,1.0,Star1/S1_0deg_r2_1.0mm.jpg,Star1/S1_0deg_r2_ref.jpg,15/15.5,15.0,15.5,repeatability check
+32,S1,0,2,1.5,Star1/S1_0deg_r2_1.5mm.jpg,Star1/S1_0deg_r2_ref.jpg,"24/24,5",24.0,24.5,repeatability check
+33,S1,0,2,2.0,Star1/S1_0deg_r2_2.0mm.jpg,Star1/S1_0deg_r2_ref.jpg,"34,5/35",34.5,35.0,repeatability check
+34,S1,0,2,2.5,Star1/S1_0deg_r2_2.5mm.jpg,Star1/S1_0deg_r2_ref.jpg,"46,5/47",46.5,47.0,repeatability check
+35,S1,0,2,3.0,Star1/S1_0deg_r2_3.0mm.jpg,Star1/S1_0deg_r2_ref.jpg,"60,5/61",60.5,61.0,repeatability check
+37,S1,45,1,3.0,Star1/S1_45deg_r1_3.0mm.jpg,Star1/S1_45deg_r1_ref.jpg,"60,5/61",60.5,61.0,sheet depth column says 2.0; file name and force say 3.0
+39,S1,90,1,3.0,Star1/S1_90deg_r1_3.0mm.jpg,Star1/S1_90deg_r1_ref.jpg,63.5/64,63.5,64.0,sheet depth column says 2.0; file name and force say 3.0
+41,S2,45,1,3.0,Star2/S2_45deg_r1_3.0mm.jpg,Star2/S2_45deg_r1_ref.jpg,25.0N,25.0,25.0,sheet depth column says 2.0; file name says 3.0
+43,S2,90,1,3.0,,Star2/S2_90deg_r1_ref.jpg,25.0,25.0,25.0,PHOTO MISSING (only the reference exists)
+45,S3,45,1,3.0,Star3/S3_45deg_r1_3.0mm.jpg,Star3/S3_45deg_r1_ref.jpg,"36,5/37",36.5,37.0,sheet depth column says 2.0; file name and force say 3.0
+47,S3,90,1,3.0,Star3/S3_90deg_r1_3.0mm.jpg,Star3/S3_90deg_r1_ref.jpg,"36,5",36.5,36.5,sheet depth column says 2.0; file name and force say 3.0
+49,S4,45,1,2.0,Star4/S4_45deg_r1_2.0mm.jpg,Star4/S4_45deg_r1_ref.jpg,78,78.0,78.0,
+51,S4,90,1,2.0,Star4/S4_90deg_r1_2.0mm.jpg,Star4/S4_90deg_r1_ref.jpg,79,79.0,79.0,sheet file name says 3.0mm; photo on disk is 2.0mm and was in the Star2 folder
